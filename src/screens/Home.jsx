@@ -4,7 +4,7 @@ import { COPY, TREATMENTS, FIGHTERS, TEAM, ARTICLES, REVIEWS, WHY, PARTNERS, SOC
 import { Logo, Pill, StarRow, SectionHead, Photo, Ico } from '../shared.jsx';
 import { HeroVisual, TreatmentVisual, ArticleVisual } from '../visuals.jsx';
 
-export function HomeScreen({ lang, onNav, onBook, onOpenTreatment, mobile = false }) {
+export function HomeScreen({ lang, onNav, onBook, onOpenTreatment, onOpenShop, mobile = false }) {
   const t = COPY[lang];
   return (
     <div>
@@ -278,7 +278,11 @@ export function HomeScreen({ lang, onNav, onBook, onOpenTreatment, mobile = fals
             </div>
             <div style={{ fontFamily: 'var(--serif)', fontSize: 22, lineHeight: 1.15, letterSpacing: -0.2, marginBottom: 10 }}>{t.sections.shop}</div>
             <div style={{ fontSize: 12.5, opacity: 0.88, marginBottom: 16, lineHeight: 1.5 }}>{t.sections.shopSub}</div>
-            <button style={{ background: '#fff', color: 'var(--teal)', border: 'none', padding: '10px 18px', borderRadius: 99, fontSize: 12.5, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+            <button
+              type="button"
+              onClick={onOpenShop}
+              style={{ background: '#fff', color: 'var(--teal)', border: 'none', padding: '10px 18px', borderRadius: 99, fontSize: 12.5, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}
+            >
               {lang === 'en' ? 'Browse the shop' : 'Lihat toko'} {Ico.arrow('#1B6B5F')}
             </button>
           </div>

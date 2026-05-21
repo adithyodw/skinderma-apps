@@ -25,3 +25,9 @@ export const BookingSheet = lazy(() =>
 export const IOSDevice = lazy(() =>
   import('./ios-frame.jsx').then((m) => ({ default: m.IOSDevice }))
 );
+export const ShopSheet = lazy(() =>
+  import('./screens/ShopSheet.jsx').then((m) => ({ default: m.ShopSheet }))
+);
+export const PatientPortalSheet = lazy(() =>
+  import('./screens/PatientPortalSheet.jsx').then((m) => ({ default: m.PatientPortalSheet }))
+);

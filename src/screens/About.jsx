@@ -1,7 +1,8 @@
 // About.jsx — Doctor profile + clinic story + reviews
 import React from 'react';
-import { COPY, TEAM, REVIEWS, TREATMENTS } from '../data.js';
-import { Pill, Photo, Monogram, SectionHead, StarRow, Ico } from '../shared.jsx';
+import { COPY, TEAM, ASSOCIATE_PHYSICIANS, REVIEWS, TREATMENTS } from '../data.js';
+import { Pill, Photo, SectionHead, StarRow, Ico } from '../shared.jsx';
+import { TeamMemberCard } from '../components/TeamMemberCard.jsx';
 import { HeroVisual, ClinicVisual } from '../visuals.jsx';
 
 export function AboutScreen({ lang, onBook }) {
@@ -87,18 +88,9 @@ export function AboutScreen({ lang, onBook }) {
 
       <div style={{ marginTop: 36 }}>
         <SectionHead eyebrow={lang === 'en' ? 'Associate physicians' : 'Dokter asosiasi'} title={t.sections.team}/>
-        <div style={{ padding: '0 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          {TEAM.slice(1).map(m => (
-            <div key={m.id} style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 18, overflow: 'hidden' }}>
-              {m.img
-                ? <Photo src={m.img} alt={m.name} accent={m.accent} ratio="1 / 1" width={400} height={400} sizes="(max-width: 768px) 50vw, 200px" objectPosition="center 22%"/>
-                : <Monogram name={m.name} accent={m.accent} ratio="1 / 1"/>}
-              <div style={{ padding: '12px 12px 14px' }}>
-                <div style={{ fontFamily: 'var(--serif)', fontSize: 14.5, color: 'var(--ink)', letterSpacing: -0.1, lineHeight: 1.2 }}>{m.name}</div>
-                <div style={{ fontSize: 10.5, color: 'var(--gold)', marginTop: 4, letterSpacing: 0.4, textTransform: 'uppercase', fontWeight: 600 }}>{m.role[lang]}</div>
-                <div style={{ fontSize: 11, color: 'var(--ink-soft)', marginTop: 6, lineHeight: 1.4 }}>{m.expertise[lang]}</div>
-              </div>
-            </div>
+        <div className="team-grid">
+          {ASSOCIATE_PHYSICIANS.map((m) => (
+            <TeamMemberCard key={m.id} member={m} lang={lang}/>
           ))}
         </div>
       </div>

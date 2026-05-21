@@ -425,6 +425,7 @@ export const TEAM = [
     role: { en: "Senior Aesthetic Physician", id: "Dokter Estetika Senior" },
     expertise: { en: "HIFU · Energy devices", id: "HIFU · Perangkat energi" },
     img: "/images/team/jessica.jpg",
+    photoPosition: "center 22%",
     accent: ["#D7E4DC", "#A8C9B8"],
     location: "Batam Centre",
   },
@@ -434,18 +435,73 @@ export const TEAM = [
     role: { en: "Anti-Aging Physician", id: "Dokter Anti-Penuaan" },
     expertise: { en: "Bio-stimulators · PDRN", id: "Bio-stimulator · PDRN" },
     img: "/images/team/intan.jpg",
+    photoPosition: "center 18%",
     accent: ["#E5DCE8", "#C5A8D4"],
     location: "Tembesi",
   },
+];
+
+/** Associate physicians shown in the team grid (excludes founder). */
+export const ASSOCIATE_PHYSICIANS = TEAM.filter((m) => m.id !== 'yeyen');
+
+export const SHOP_PRODUCTS = [
   {
-    id: "marcus",
-    name: "dr. Marcus Tan, Dipl.Derm",
-    role: { en: "Dermatologist", id: "Dermatologis" },
-    expertise: { en: "Acne · Cosmetic dermatology", id: "Jerawat · Dermatologi kosmetik" },
-    accent: ["#EAD9D2", "#D4A8A8"],
-    location: "Batam Centre",
+    id: 'acne-cleanser',
+    name: { en: 'Acne Purifying Cleanser', id: 'Pembersih Jerawat Purifying' },
+    sub: { en: 'Salicylic acid · oil control', id: 'Asam salisilat · kontrol minyak' },
+    desc: {
+      en: 'Medical-grade gel cleanser formulated for acne-prone Asian skin. Removes excess sebum without stripping the barrier.',
+      id: 'Pembersih gel medis untuk kulit berjerawat Asia. Membersihkan sebum berlebih tanpa mengikis barrier.',
+    },
+    price: 'IDR 285,000',
+    volume: '150 ml',
+    accent: ['#D7E4DC', '#A8C9B8'],
+  },
+  {
+    id: 'melasma-serum',
+    name: { en: 'Melasma Brightening Serum', id: 'Serum Pencerah Melasma' },
+    sub: { en: 'Tranexamic · niacinamide complex', id: 'Traneksamat · kompleks niacinamide' },
+    desc: {
+      en: 'Physician-formulated serum targeting melasma and post-inflammatory hyperpigmentation with daily SPF pairing.',
+      id: 'Serum formulasi dokter untuk melasma dan hiperpigmentasi pasca-inflamasi — dipasangkan dengan SPF harian.',
+    },
+    price: 'IDR 420,000',
+    volume: '30 ml',
+    accent: ['#EAD9D2', '#D4A8A8'],
+  },
+  {
+    id: 'barrier-cream',
+    name: { en: 'Advanced Barrier Repair Cream', id: 'Krim Perbaikan Barrier Lanjutan' },
+    sub: { en: 'Ceramides · panthenol · squalane', id: 'Ceramide · pantenol · squalane' },
+    desc: {
+      en: 'Rich but fast-absorbing recovery cream for post-treatment, retinoid nights, and compromised skin barriers.',
+      id: 'Krim pemulihan kaya namun cepat menyerap untuk pasca-perawatan, malam retinoid, dan barrier rusak.',
+    },
+    price: 'IDR 365,000',
+    volume: '50 ml',
+    accent: ['#E8E0D2', '#D4C5A8'],
+  },
+  {
+    id: 'spf50',
+    name: { en: 'Physical Sunscreen SPF 50+', id: 'Tabir Surya Fisik SPF 50+' },
+    sub: { en: 'Tinted · broad spectrum · no white cast', id: 'Tinted · spektrum luas · tanpa white cast' },
+    desc: {
+      en: 'Iron-oxide tinted physical SPF designed for equatorial light and melasma-prone skin — reapply every 2–3 hours outdoors.',
+      id: 'SPF fisik tinted iron-oxide untuk cahaya khatulistiwa dan kulit rentan melasma — aplikasi ulang setiap 2–3 jam.',
+    },
+    price: 'IDR 395,000',
+    volume: '50 ml',
+    accent: ['#E0DACE', '#C9B889'],
   },
 ];
+
+export function buildShopOrderWhatsAppUrl({ title, price }) {
+  const text =
+    'Hello SKINDERMA, I would like to order the following skincare product from the app:\n' +
+    `- Product: ${title}\n` +
+    `- Price: ${price}`;
+  return `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(text)}`;
+}
 
 export const PARTNERS = [
   "Allergan", "Ultherapy", "Profhilo", "Rejuran",

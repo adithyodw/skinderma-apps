@@ -209,6 +209,453 @@ body.mobile-app,
   backface-visibility: hidden;
 }
 
+/* ── Uniform associate physician cards ── */
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0 20px;
+  align-items: stretch;
+}
+
+.team-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.team-card__media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.team-card__media .photo-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.team-card__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 12px;
+  min-height: 108px;
+}
+
+.team-card__name {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.1px;
+  line-height: 1.2;
+}
+
+.team-card__role {
+  margin: 4px 0 0;
+  font-size: 10.5px;
+  color: var(--gold);
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.team-card__expertise {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--ink-soft);
+  line-height: 1.4;
+  flex: 1;
+}
+
+/* ── Shared sheet chrome (shop + portal) ── */
+.sheet-panel--tall {
+  max-height: 92%;
+  min-height: 0;
+}
+
+.sheet-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 22px 16px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.sheet-panel__title {
+  margin: 8px 0 0;
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+  line-height: 1.1;
+}
+
+.sheet-panel__sub {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  line-height: 1.45;
+  max-width: 280px;
+}
+
+.sheet-panel__scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+.sheet-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 99px;
+  border: none;
+  background: var(--cream);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Shop grid ── */
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px 20px 24px;
+  align-items: stretch;
+}
+
+.shop-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+  height: 100%;
+}
+
+.shop-card__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 12px;
+  gap: 4px;
+}
+
+.shop-card__meta {
+  font-size: 10px;
+  color: var(--gold);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.shop-card__title {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 13.5px;
+  color: var(--ink);
+  line-height: 1.2;
+  letter-spacing: -0.2px;
+}
+
+.shop-card__sub {
+  margin: 0;
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  line-height: 1.35;
+}
+
+.shop-card__price {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--teal);
+}
+
+.shop-card__desc {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+
+.shop-card__actions {
+  margin-top: auto;
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shop-card__btn {
+  width: 100%;
+  border-radius: 99px;
+  padding: 9px 10px;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: none;
+  font-family: inherit;
+}
+
+.shop-card__btn--ghost {
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.shop-card__btn--primary {
+  background: var(--teal);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(27, 107, 95, 0.2);
+}
+
+/* ── Patient portal ── */
+.portal-body {
+  padding: 16px 22px 24px;
+}
+
+.portal-choose__lead {
+  margin: 0 0 16px;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.portal-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  margin-bottom: 10px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.portal-option strong {
+  display: block;
+  font-size: 14px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.portal-option small {
+  display: block;
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+}
+
+.portal-option__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(27, 107, 95, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.portal-back {
+  background: none;
+  border: none;
+  color: var(--teal);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+}
+
+.portal-label {
+  display: block;
+  font-size: 11px;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.portal-phone-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.portal-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 14px;
+  font-family: inherit;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.portal-input--code {
+  width: 88px;
+  flex-shrink: 0;
+}
+
+.portal-error {
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  color: #b33;
+}
+
+.portal-submit {
+  width: 100%;
+  margin-top: 8px;
+  padding: 14px 18px;
+  border: none;
+  border-radius: 99px;
+  background: var(--teal);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 6px 16px rgba(27, 107, 95, 0.22);
+}
+
+.portal-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  gap: 16px;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.portal-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--line);
+  border-top-color: var(--teal);
+  border-radius: 50%;
+  animation: portalSpin 0.75s linear infinite;
+  will-change: transform;
+}
+
+@keyframes portalSpin {
+  to { transform: rotate(360deg); }
+}
+
+.portal-token-banner {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  margin-bottom: 16px;
+}
+
+.portal-token-banner__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 99px;
+  background: rgba(27, 107, 95, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.portal-token-banner strong {
+  display: block;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+.portal-token-banner p {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+
+.portal-dashboard h3 {
+  margin: 0 0 12px;
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.portal-stat {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.portal-stat span {
+  display: block;
+  font-size: 10.5px;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.portal-stat strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.portal-stat small {
+  display: block;
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+}
+
+.portal-stat--muted {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;

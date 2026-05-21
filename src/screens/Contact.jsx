@@ -3,7 +3,7 @@ import React from 'react';
 import { COPY, LOCATIONS, SOCIAL, WHATSAPP_URL, buildConsultationWhatsAppUrl } from '../data.js';
 import { Pill, Ico } from '../shared.jsx';
 
-export function ContactScreen({ lang, onBook }) {
+export function ContactScreen({ lang, onBook, onOpenPortal }) {
   return (
     <div style={{ paddingBottom: 24 }}>
       <div style={{ padding: '64px 20px 0' }}>
@@ -113,7 +113,7 @@ export function ContactScreen({ lang, onBook }) {
         <div style={{ fontSize: 11, color: 'var(--gold)', letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: 600, marginBottom: 12 }}>
           {lang === 'en' ? 'Existing patients' : 'Pasien lama'}
         </div>
-        <button style={{ width: '100%', background: '#fff', border: '1px solid var(--line)', borderRadius: 18, padding: '18px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14 }}>
+        <button type="button" onClick={onOpenPortal} style={{ width: '100%', background: '#fff', border: '1px solid var(--line)', borderRadius: 18, padding: '18px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(27,107,95,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{Ico.user('#1B6B5F')}</div>
           <div style={{ textAlign: 'left', flex: 1 }}>
             <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>{lang === 'en' ? 'Patient Portal' : 'Portal Pasien'}</div>

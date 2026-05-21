@@ -12,6 +12,8 @@ import {
   JournalScreen,
   ContactScreen,
   BookingSheet,
+  ShopSheet,
+  PatientPortalSheet,
   IOSDevice,
 } from './lazy-screens.jsx';
 
@@ -77,6 +79,8 @@ function PhoneApp({ lang, mobile = false, onLangChange }) {
   const [tab, setTab] = React.useState('home');
   const [openTreatment, setOpenTreatment] = React.useState(null);
   const [booking, setBooking] = React.useState(false);
+  const [shopOpen, setShopOpen] = React.useState(false);
+  const [portalOpen, setPortalOpen] = React.useState(false);
   const scrollRef = React.useRef(null);
 
   React.useEffect(() => {
@@ -85,17 +89,19 @@ function PhoneApp({ lang, mobile = false, onLangChange }) {
 
   const handleNav = (t) => setTab(t);
   const handleBook = () => setBooking(true);
+  const handleOpenShop = () => setShopOpen(true);
+  const handleOpenPortal = () => setPortalOpen(true);
   const treatment = openTreatment ? TREATMENTS.find(t => t.id === openTreatment) : null;
 
   return (
     <div className="phone-app">
       <main ref={scrollRef} className="phone-app__main">
         <Suspense fallback={<ScreenFallback/>}>
-          {tab === 'home' && <HomeScreen lang={lang} mobile={mobile} onNav={handleNav} onBook={handleBook} onOpenTreatment={(id) => setOpenTreatment(id)}/>}
+          {tab === 'home' && <HomeScreen lang={lang} mobile={mobile} onNav={handleNav} onBook={handleBook} onOpenShop={handleOpenShop} onOpenTreatment={(id) => setOpenTreatment(id)}/>}
           {tab === 'treatments' && <TreatmentsScreen lang={lang} onOpenTreatment={(id) => setOpenTreatment(id)} onBook={handleBook}/>}
           {tab === 'about' && <AboutScreen lang={lang} onBook={handleBook}/>}
           {tab === 'journal' && <JournalScreen lang={lang}/>}
-          {tab === 'contact' && <ContactScreen lang={lang} onBook={handleBook}/>}
+          {tab === 'contact' && <ContactScreen lang={lang} onBook={handleBook} onOpenPortal={handleOpenPortal}/>}
         </Suspense>
       </main>
 
@@ -117,6 +123,16 @@ function PhoneApp({ lang, mobile = false, onLangChange }) {
       {booking && (
         <Suspense fallback={null}>
           <BookingSheet lang={lang} onClose={() => setBooking(false)}/>
+        </Suspense>
+      )}
+      {shopOpen && (
+        <Suspense fallback={null}>
+          <ShopSheet lang={lang} onClose={() => setShopOpen(false)}/>
+        </Suspense>
+      )}
+      {portalOpen && (
+        <Suspense fallback={null}>
+          <PatientPortalSheet lang={lang} onClose={() => setPortalOpen(false)}/>
         </Suspense>
       )}
     </div>
