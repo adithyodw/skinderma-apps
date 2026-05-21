@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1B6B5F"/>
+      <stop offset="0.6" stop-color="#0F4D44"/>
+      <stop offset="1" stop-color="#0A3833"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <g opacity="0.16" stroke="#fff" stroke-width="1.2" fill="none">
+    <path d="M-40 120 Q360 80 660 120 T1240 116"/>
+    <path d="M-40 220 Q360 180 660 220 T1240 216"/>
+    <path d="M-40 320 Q360 280 660 320 T1240 316"/>
+    <path d="M-40 420 Q360 380 660 420 T1240 416"/>
+    <path d="M-40 520 Q360 480 660 520 T1240 516"/>
+  </g>
+  <path d="M1200 0 Q820 90 800 630 Q1080 540 1200 0z" fill="#B89968" opacity="0.18"/>
+  <g transform="translate(90 250)">
+    <ellipse cx="36" cy="36" rx="33" ry="33" fill="none" stroke="#fff" stroke-width="2.4"/>
+    <path d="M22 47 C 22 29, 36 22, 50 22 C 50 40, 40 50, 26 50 Z" fill="#fff"/>
+  </g>
+  <text x="180" y="300" font-family="Georgia, 'Times New Roman', serif" font-size="76" fill="#ffffff" letter-spacing="6">SKINDERMA</text>
+  <text x="182" y="345" font-family="Arial, sans-serif" font-size="24" fill="rgba(255,255,255,0.7)" letter-spacing="8">AESTHETIC CLINIC</text>
+  <text x="90" y="470" font-family="Georgia, 'Times New Roman', serif" font-size="42" fill="#E5D9B8" font-style="italic">Where medical precision meets aesthetic excellence</text>
+  <text x="92" y="525" font-family="Arial, sans-serif" font-size="26" fill="rgba(255,255,255,0.82)">Batam Acne &amp; Melasma Centre · Physician-led since 2021</text>
+</svg>

@@ -1,0 +1,12 @@
+{
+  "name": "SKINDERMA Aesthetic Clinic",
+  "short_name": "SKINDERMA",
+  "description": "Physician-led aesthetic clinic in Batam — acne, melasma, laser and skin rejuvenation.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#EFE9DF",
+  "theme_color": "#0F4D44",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
