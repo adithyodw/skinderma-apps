@@ -1,6 +1,6 @@
 // Treatments.jsx — full treatments list + detail sheet
 import React from 'react';
-import { COPY, TREATMENTS } from '../data.js';
+import { COPY, TREATMENTS, treatmentMatchesFilter, getTreatmentBenefits } from '../data.js';
 import { Pill, Ico } from '../shared.jsx';
 import { TreatmentVisual } from '../visuals.jsx';
 
@@ -10,16 +10,17 @@ export function TreatmentsScreen({ lang, onOpenTreatment, onBook }) {
 
   const filters = [
     { id: 'all', en: 'All', id_l: 'Semua' },
-    { id: 'skincare', en: 'Skincare', id_l: 'Skincare' },
-    { id: 'injectables', en: 'Injectables', id_l: 'Suntikan' },
+    { id: 'maintenance', en: 'Maintenance', id_l: 'Rutin' },
+    { id: 'scar', en: 'Scars', id_l: 'Bekas luka' },
+    { id: 'pigment', en: 'Pigment', id_l: 'Pigmen' },
+    { id: 'lift', en: 'Lifting', id_l: 'Lifting' },
     { id: 'laser', en: 'Laser', id_l: 'Laser' },
-    { id: 'rejuvenation', en: 'Rejuvenation', id_l: 'Peremajaan' },
+    { id: 'injectables', en: 'Injectables', id_l: 'Suntikan' },
     { id: 'peels', en: 'Peels', id_l: 'Peeling' },
+    { id: 'body', en: 'Body', id_l: 'Tubuh' },
   ];
 
-  const visible = filter === 'all'
-    ? TREATMENTS
-    : TREATMENTS.filter((tr) => tr.category === filter);
+  const visible = TREATMENTS.filter((tr) => treatmentMatchesFilter(tr, filter));
 
   return (
     <div style={{ paddingBottom: 24, background: 'var(--cream)', minHeight: '100%' }}>
@@ -136,7 +137,7 @@ export function TreatmentDetail({ tr, lang, onClose, onBook }) {
           <div style={{ marginBottom: 28 }}>
             <div style={{ fontFamily: 'var(--serif)', fontSize: 18, color: 'var(--ink)', marginBottom: 14 }}>{lang === 'en' ? "What's included" : 'Yang termasuk'}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {(tr.benefits[lang] || tr.benefits.en).map((b, i) => (
+              {getTreatmentBenefits(tr, lang).map((b, i) => (
                 <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                   <div style={{ width: 22, height: 22, borderRadius: 99, background: 'rgba(27,107,95,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{Ico.check('#1B6B5F')}</div>
                   <span style={{ fontSize: 13.5, color: 'var(--ink)' }}>{b}</span>
