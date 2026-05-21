@@ -4,7 +4,7 @@ import { COPY, TREATMENTS, FIGHTERS, TEAM, ARTICLES, REVIEWS, WHY, PARTNERS, SOC
 import { Logo, Pill, StarRow, SectionHead, Photo, Ico } from '../shared.jsx';
 import { HeroVisual, TreatmentVisual, ArticleVisual } from '../visuals.jsx';
 
-export function HomeScreen({ lang, onNav, onBook, onOpenTreatment }) {
+export function HomeScreen({ lang, onNav, onBook, onOpenTreatment, mobile = false }) {
   const t = COPY[lang];
   return (
     <div>
@@ -16,7 +16,9 @@ export function HomeScreen({ lang, onNav, onBook, onOpenTreatment }) {
           background: 'linear-gradient(180deg, rgba(15,77,68,0.0) 0%, rgba(15,77,68,0.4) 55%, rgba(15,77,68,0.85) 100%)',
         }}/>
         <div style={{
-          position: 'absolute', top: 60, left: 0, right: 0,
+          position: 'absolute',
+          top: mobile ? 'calc(env(safe-area-inset-top, 0px) + 48px)' : 60,
+          left: 0, right: 0,
           padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
@@ -26,11 +28,13 @@ export function HomeScreen({ lang, onNav, onBook, onOpenTreatment }) {
               <span style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.7)', letterSpacing: 1.5, marginTop: 3, fontWeight: 500 }}>AESTHETIC CLINIC</span>
             </div>
           </div>
-          <button onClick={() => onNav('contact')} aria-label={lang === 'en' ? 'View locations' : 'Lihat lokasi'} style={{
-            background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.25)',
-            width: 38, height: 38, borderRadius: 99, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', backdropFilter: 'blur(8px)',
-          }}>{Ico.pin('#fff')}</button>
+          {!mobile && (
+            <button onClick={() => onNav('contact')} aria-label={lang === 'en' ? 'View locations' : 'Lihat lokasi'} style={{
+              background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.25)',
+              width: 38, height: 38, borderRadius: 99, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', backdropFilter: 'blur(8px)',
+            }}>{Ico.pin('#fff')}</button>
+          )}
         </div>
 
         <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '0 20px 30px' }}>

@@ -1,4 +1,6 @@
-// App.jsx — bottom tab nav, screen routing, language toggle, device frame
+// App.jsx — bottom tab nav, screen routing, language toggle.
+// Desktop (>=768px): app shown inside a presentation iPhone frame + top banner.
+// Mobile (<768px): frame & banner are dropped; the app fills the real viewport.
 import React from 'react';
 import { COPY, TREATMENTS } from './data.js';
 import { Ico, Wordmark, Pill } from './shared.jsx';
@@ -8,6 +10,25 @@ import { TreatmentsScreen, TreatmentDetail } from './screens/Treatments.jsx';
 import { AboutScreen } from './screens/About.jsx';
 import { JournalScreen } from './screens/Journal.jsx';
 import { ContactScreen, BookingSheet } from './screens/Contact.jsx';
+
+const MOBILE_QUERY = '(max-width: 767px)';
+
+// Single source of truth for "is this a real phone-sized viewport?".
+// Initialised synchronously so the first paint is already correct (no frame flash).
+function useIsMobile() {
+  const read = () => (typeof window !== 'undefined' && 'matchMedia' in window)
+    ? window.matchMedia(MOBILE_QUERY).matches
+    : false;
+  const [isMobile, setIsMobile] = React.useState(read);
+  React.useEffect(() => {
+    const mq = window.matchMedia(MOBILE_QUERY);
+    const onChange = (e) => setIsMobile(e.matches);
+    setIsMobile(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return isMobile;
+}
 
 const TABS = [
   { id: 'home', icon: 'home' },
@@ -21,7 +42,9 @@ function BottomNav({ active, onChange, lang }) {
   const t = COPY[lang];
   return (
     <nav aria-label={lang === 'en' ? 'Primary' : 'Utama'} style={{
-      position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 50, paddingBottom: 28,
+      position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 50,
+      // Respect the iOS home-indicator safe area on real devices (0 on desktop).
+      paddingBottom: 'calc(28px + env(safe-area-inset-bottom, 0px))',
       background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.96) 50%)',
     }}>
       <div style={{
@@ -53,7 +76,7 @@ function BottomNav({ active, onChange, lang }) {
   );
 }
 
-function PhoneApp({ lang }) {
+function PhoneApp({ lang, mobile = false, onLangChange }) {
   const [tab, setTab] = React.useState('home');
   const [openTreatment, setOpenTreatment] = React.useState(null);
   const [booking, setBooking] = React.useState(false);
@@ -69,8 +92,8 @@ function PhoneApp({ lang }) {
 
   return (
     <div style={{ position: 'absolute', inset: 0, background: '#fff', overflow: 'hidden', color: 'var(--ink)' }}>
-      <main ref={scrollRef} style={{ position: 'absolute', inset: 0, overflowY: 'auto', overflowX: 'hidden', paddingBottom: 110 }}>
-        {tab === 'home' && <HomeScreen lang={lang} onNav={handleNav} onBook={handleBook} onOpenTreatment={(id) => setOpenTreatment(id)}/>}
+      <main ref={scrollRef} style={{ position: 'absolute', inset: 0, overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', paddingBottom: 110 }}>
+        {tab === 'home' && <HomeScreen lang={lang} mobile={mobile} onNav={handleNav} onBook={handleBook} onOpenTreatment={(id) => setOpenTreatment(id)}/>}
         {tab === 'treatments' && <TreatmentsScreen lang={lang} onOpenTreatment={(id) => setOpenTreatment(id)} onBook={handleBook}/>}
         {tab === 'about' && <AboutScreen lang={lang} onBook={handleBook}/>}
         {tab === 'journal' && <JournalScreen lang={lang}/>}
@@ -78,6 +101,14 @@ function PhoneApp({ lang }) {
       </main>
 
       <BottomNav active={tab} onChange={setTab} lang={lang}/>
+
+      {/* On mobile the desktop top banner is gone, so the language toggle floats
+          here (below modals via z-index, above page chrome). */}
+      {mobile && onLangChange && (
+        <div className="lang-fab">
+          <LanguagePill lang={lang} onChange={onLangChange}/>
+        </div>
+      )}
 
       {treatment && <TreatmentDetail tr={treatment} lang={lang} onClose={() => setOpenTreatment(null)} onBook={handleBook}/>}
       {booking && <BookingSheet lang={lang} onClose={() => setBooking(false)}/>}
@@ -87,7 +118,7 @@ function PhoneApp({ lang }) {
 
 function LanguagePill({ lang, onChange }) {
   return (
-    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#fff', border: '1px solid var(--line)', padding: 4, borderRadius: 99, boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }}>
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#fff', border: '1px solid var(--line)', padding: 4, borderRadius: 99, boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}>
       {[{ id: 'en', l: 'EN' }, { id: 'id', l: 'ID' }].map(o => (
         <button key={o.id} onClick={() => onChange(o.id)} aria-pressed={lang === o.id} aria-label={o.id === 'en' ? 'English' : 'Bahasa Indonesia'} style={{
           padding: '6px 14px', border: 'none', borderRadius: 99,
@@ -102,11 +133,28 @@ function LanguagePill({ lang, onChange }) {
 
 export default function App() {
   const [lang, setLang] = React.useState('en');
+  const isMobile = useIsMobile();
 
   React.useEffect(() => {
     document.documentElement.lang = lang;
   }, [lang]);
 
+  // Lock body scroll on mobile so only the in-app screen scrolls (no double scrollbars).
+  React.useEffect(() => {
+    document.body.classList.toggle('mobile-app', isMobile);
+    return () => document.body.classList.remove('mobile-app');
+  }, [isMobile]);
+
+  // ── Mobile: native full-screen, no frame, no presentation banner ──
+  if (isMobile) {
+    return (
+      <div className="mobile-stage">
+        <PhoneApp lang={lang} mobile onLangChange={setLang}/>
+      </div>
+    );
+  }
+
+  // ── Desktop: keep the presentation iPhone frame + top "App preview" banner ──
   return (
     <div style={{
       minHeight: '100vh', padding: '40px 20px',
