@@ -212,12 +212,14 @@ export function BookingSheet({ lang, onClose }) {
 
   return (
     <>
-      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, animation: 'fadeIn 200ms ease' }}/>
-      <div role="dialog" aria-modal="true" aria-label={lang === 'en' ? 'Book consultation' : 'Buat janji konsultasi'} style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 101, background: '#fff', borderRadius: '24px 24px 0 0',
-        padding: '14px 0 calc(16px + env(safe-area-inset-bottom, 0px))',
-        animation: 'sheetSlide 320ms cubic-bezier(0.16, 1, 0.3, 1)', maxHeight: '88%', display: 'flex', flexDirection: 'column',
-      }}>
+      <div className="sheet-backdrop" onClick={onClose} role="presentation"/>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={lang === 'en' ? 'Book consultation' : 'Buat janji konsultasi'}
+        className="sheet-panel"
+        style={{ padding: '14px 0 calc(16px + env(safe-area-inset-bottom, 0px))' }}
+      >
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
           <div style={{ width: 40, height: 4, borderRadius: 99, background: 'rgba(0,0,0,0.15)' }}/>
         </div>

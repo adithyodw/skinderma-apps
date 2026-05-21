@@ -27,35 +27,60 @@ export const Ico = {
 };
 
 // ─────────────────────────────────────────────────────────────
-// PHOTO — loads URL with graceful fallback to gradient
+// PHOTO — responsive img with CLS-safe aspect box (Vite analogue of next/image)
 // ─────────────────────────────────────────────────────────────
-export function Photo({ src, alt = '', height, ratio, accent, overlay, children, style = {}, objectPosition = 'center' }) {
+const DEFAULT_SIZES = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw';
+
+export function Photo({
+  src,
+  alt = '',
+  height,
+  width,
+  ratio,
+  sizes = DEFAULT_SIZES,
+  priority = false,
+  accent,
+  overlay,
+  children,
+  style = {},
+  objectPosition = 'center',
+}) {
   const [err, setErr] = React.useState(false);
   const fb = accent
     ? `linear-gradient(135deg, ${accent[0]} 0%, ${accent[1]} 100%)`
     : 'linear-gradient(135deg, #E8E0D2 0%, #D4C5A8 100%)';
+  const aspectRatio = ratio || (width && height ? `${width} / ${height}` : undefined);
+
   return (
-    <div style={{
-      position: 'relative', overflow: 'hidden',
-      background: fb,
-      height, aspectRatio: ratio, ...style,
-    }}>
+    <div
+      className={priority ? 'photo-frame photo-frame--priority' : 'photo-frame'}
+      style={{
+        position: 'relative',
+        overflow: 'hidden',
+        background: fb,
+        height,
+        aspectRatio,
+        width: width && !height ? width : undefined,
+        ...style,
+      }}
+    >
       {!err && src && (
         <img
+          className="photo-frame__img"
           src={src}
           alt={alt}
+          sizes={sizes}
+          width={width}
+          height={height}
           onError={() => setErr(true)}
-          loading="lazy"
+          loading={priority ? 'eager' : 'lazy'}
+          fetchPriority={priority ? 'high' : 'auto'}
           decoding="async"
-          style={{
-            width: '100%', height: '100%',
-            objectFit: 'cover', objectPosition,
-            display: 'block',
-          }}
+          style={{ objectPosition }}
         />
       )}
       {overlay && (
-        <div style={{ position: 'absolute', inset: 0, background: overlay }}/>
+        <div className="photo-frame__overlay" style={{ background: overlay }}/>
       )}
       {children}
     </div>

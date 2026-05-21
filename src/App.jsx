@@ -1,15 +1,23 @@
 // App.jsx — bottom tab nav, screen routing, language toggle.
 // Desktop (>=768px): app shown inside a presentation iPhone frame + top banner.
 // Mobile (<768px): frame & banner are dropped; the app fills the real viewport.
-import React from 'react';
+import React, { Suspense } from 'react';
 import { COPY, TREATMENTS } from './data.js';
 import { Ico, Wordmark, Pill } from './shared.jsx';
-import { IOSDevice } from './ios-frame.jsx';
-import { HomeScreen } from './screens/Home.jsx';
-import { TreatmentsScreen, TreatmentDetail } from './screens/Treatments.jsx';
-import { AboutScreen } from './screens/About.jsx';
-import { JournalScreen } from './screens/Journal.jsx';
-import { ContactScreen, BookingSheet } from './screens/Contact.jsx';
+import {
+  HomeScreen,
+  TreatmentsScreen,
+  TreatmentDetail,
+  AboutScreen,
+  JournalScreen,
+  ContactScreen,
+  BookingSheet,
+  IOSDevice,
+} from './lazy-screens.jsx';
+
+function ScreenFallback() {
+  return <div className="screen-fallback" aria-hidden="true"/>;
+}
 
 const MOBILE_QUERY = '(max-width: 767px)';
 
@@ -82,11 +90,13 @@ function PhoneApp({ lang, mobile = false, onLangChange }) {
   return (
     <div className="phone-app">
       <main ref={scrollRef} className="phone-app__main">
-        {tab === 'home' && <HomeScreen lang={lang} mobile={mobile} onNav={handleNav} onBook={handleBook} onOpenTreatment={(id) => setOpenTreatment(id)}/>}
-        {tab === 'treatments' && <TreatmentsScreen lang={lang} onOpenTreatment={(id) => setOpenTreatment(id)} onBook={handleBook}/>}
-        {tab === 'about' && <AboutScreen lang={lang} onBook={handleBook}/>}
-        {tab === 'journal' && <JournalScreen lang={lang}/>}
-        {tab === 'contact' && <ContactScreen lang={lang} onBook={handleBook}/>}
+        <Suspense fallback={<ScreenFallback/>}>
+          {tab === 'home' && <HomeScreen lang={lang} mobile={mobile} onNav={handleNav} onBook={handleBook} onOpenTreatment={(id) => setOpenTreatment(id)}/>}
+          {tab === 'treatments' && <TreatmentsScreen lang={lang} onOpenTreatment={(id) => setOpenTreatment(id)} onBook={handleBook}/>}
+          {tab === 'about' && <AboutScreen lang={lang} onBook={handleBook}/>}
+          {tab === 'journal' && <JournalScreen lang={lang}/>}
+          {tab === 'contact' && <ContactScreen lang={lang} onBook={handleBook}/>}
+        </Suspense>
       </main>
 
       <BottomNav active={tab} onChange={setTab} lang={lang}/>
@@ -99,8 +109,16 @@ function PhoneApp({ lang, mobile = false, onLangChange }) {
         </div>
       )}
 
-      {treatment && <TreatmentDetail tr={treatment} lang={lang} onClose={() => setOpenTreatment(null)} onBook={handleBook}/>}
-      {booking && <BookingSheet lang={lang} onClose={() => setBooking(false)}/>}
+      {treatment && (
+        <Suspense fallback={null}>
+          <TreatmentDetail tr={treatment} lang={lang} onClose={() => setOpenTreatment(null)} onBook={handleBook}/>
+        </Suspense>
+      )}
+      {booking && (
+        <Suspense fallback={null}>
+          <BookingSheet lang={lang} onClose={() => setBooking(false)}/>
+        </Suspense>
+      )}
     </div>
   );
 }
@@ -159,9 +177,11 @@ export default function App() {
       </div>
 
       <div style={{ display: 'flex', gap: 30, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
-        <IOSDevice width={402} height={870}>
-          <PhoneApp lang={lang}/>
-        </IOSDevice>
+        <Suspense fallback={<div style={{ width: 402, height: 870, borderRadius: 48, background: '#F2F2F7' }}/>}>
+          <IOSDevice width={402} height={870}>
+            <PhoneApp lang={lang}/>
+          </IOSDevice>
+        </Suspense>
       </div>
 
       <div style={{ fontSize: 11, color: 'var(--ink-soft)', letterSpacing: 0.4, marginTop: 8, textAlign: 'center', maxWidth: 402 }}>

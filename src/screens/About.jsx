@@ -36,7 +36,16 @@ export function AboutScreen({ lang, onBook }) {
       <div style={{ padding: '32px 20px 0' }}>
         <SectionHead eyebrow={lang === 'en' ? 'Your physician' : 'Dokter Anda'} title={t.sections.doctor}/>
         <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 22, overflow: 'hidden', marginTop: 16, boxShadow: '0 4px 16px rgba(0,0,0,0.04)' }}>
-          <Photo src={TEAM[0].img} alt={lang === 'en' ? 'dr. Yeyen Handoko, founder and aesthetic physician at SKINDERMA Aesthetic Clinic' : 'dr. Yeyen Handoko, pendiri dan dokter estetika SKINDERMA Aesthetic Clinic'} accent={TEAM[0].accent} height={360} objectPosition="center 12%">
+          <Photo
+            src={TEAM[0].img}
+            alt={lang === 'en' ? 'dr. Yeyen Handoko, founder and aesthetic physician at SKINDERMA Aesthetic Clinic' : 'dr. Yeyen Handoko, pendiri dan dokter estetika SKINDERMA Aesthetic Clinic'}
+            accent={TEAM[0].accent}
+            height={360}
+            width={400}
+            ratio="10 / 9"
+            sizes="(max-width: 768px) 100vw, 402px"
+            objectPosition="center 12%"
+          >
             <div style={{ position: 'absolute', top: 14, left: 14 }}><Pill tone="dark">{lang === 'en' ? 'Founder' : 'Pendiri'}</Pill></div>
           </Photo>
           <div style={{ padding: '20px 20px 22px' }}>
@@ -82,7 +91,7 @@ export function AboutScreen({ lang, onBook }) {
           {TEAM.slice(1).map(m => (
             <div key={m.id} style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 18, overflow: 'hidden' }}>
               {m.img
-                ? <Photo src={m.img} alt={m.name} accent={m.accent} ratio="1 / 1" objectPosition="center 22%"/>
+                ? <Photo src={m.img} alt={m.name} accent={m.accent} ratio="1 / 1" width={400} height={400} sizes="(max-width: 768px) 50vw, 200px" objectPosition="center 22%"/>
                 : <Monogram name={m.name} accent={m.accent} ratio="1 / 1"/>}
               <div style={{ padding: '12px 12px 14px' }}>
                 <div style={{ fontFamily: 'var(--serif)', fontSize: 14.5, color: 'var(--ink)', letterSpacing: -0.1, lineHeight: 1.2 }}>{m.name}</div>

@@ -149,7 +149,17 @@ export function HomeScreen({ lang, onNav, onBook, onOpenTreatment, mobile = fals
       {/* ───── DOCTOR FEATURE STRIP ───── */}
       <div style={{ marginTop: 44, padding: '0 20px' }}>
         <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 22, overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.04)' }}>
-          <Photo src={TEAM[0].img} alt={lang === 'en' ? 'dr. Yeyen Handoko, founder and aesthetic physician at SKINDERMA Aesthetic Clinic' : 'dr. Yeyen Handoko, pendiri dan dokter estetika SKINDERMA Aesthetic Clinic'} accent={TEAM[0].accent} height={280} objectPosition="center 18%">
+          <Photo
+            src={TEAM[0].img}
+            alt={lang === 'en' ? 'dr. Yeyen Handoko, founder and aesthetic physician at SKINDERMA Aesthetic Clinic' : 'dr. Yeyen Handoko, pendiri dan dokter estetika SKINDERMA Aesthetic Clinic'}
+            accent={TEAM[0].accent}
+            height={280}
+            width={400}
+            ratio="10 / 7"
+            priority
+            sizes="(max-width: 768px) 100vw, 402px"
+            objectPosition="center 18%"
+          >
             <div style={{ position: 'absolute', top: 14, left: 14 }}>
               <Pill tone="dark">{lang === 'en' ? 'Founder' : 'Pendiri'}</Pill>
             </div>

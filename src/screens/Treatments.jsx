@@ -99,14 +99,11 @@ export function TreatmentDetail({ tr, lang, onClose, onBook }) {
   const t = COPY[lang];
   if (!tr) return null;
   return (
-    <div role="dialog" aria-modal="true" aria-label={tr.name[lang]} style={{
-      position: 'absolute', inset: 0, zIndex: 100, background: '#fff',
-      display: 'flex', flexDirection: 'column', animation: 'sheetUp 280ms cubic-bezier(0.16, 1, 0.3, 1)',
-    }}>
+    <div role="dialog" aria-modal="true" aria-label={tr.name[lang]} className="sheet-panel--up">
       <div style={{ position: 'relative', flexShrink: 0 }}>
         <TreatmentVisual tr={tr} height={320}/>
-        <button onClick={onClose} aria-label={lang === 'en' ? 'Close' : 'Tutup'} style={{ position: 'absolute', top: 60, left: 16, width: 40, height: 40, borderRadius: 99, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(10px)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{Ico.close('#1B6B5F')}</button>
-        <button aria-label={lang === 'en' ? 'Share' : 'Bagikan'} style={{ position: 'absolute', top: 60, right: 16, width: 40, height: 40, borderRadius: 99, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(10px)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{Ico.share('#1B6B5F')}</button>
+        <button onClick={onClose} aria-label={lang === 'en' ? 'Close' : 'Tutup'} className="gpu-promote" style={{ position: 'absolute', top: 60, left: 16, width: 40, height: 40, borderRadius: 99, background: 'rgba(255,255,255,0.92)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{Ico.close('#1B6B5F')}</button>
+        <button aria-label={lang === 'en' ? 'Share' : 'Bagikan'} className="gpu-promote" style={{ position: 'absolute', top: 60, right: 16, width: 40, height: 40, borderRadius: 99, background: 'rgba(255,255,255,0.92)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{Ico.share('#1B6B5F')}</button>
         <div style={{ position: 'absolute', bottom: 16, left: 16 }}><Pill tone="dark">{tr.tag[lang]}</Pill></div>
       </div>
 
