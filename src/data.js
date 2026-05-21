@@ -67,165 +67,186 @@ export const COPY = {
   },
 };
 
+// Core procedures — synced with skinderma-clinic-website.vercel.app/procedures
 export const TREATMENTS = [
   {
     id: "facial",
+    category: "skincare",
     name: { en: "Facial Treatment", id: "Perawatan Wajah" },
-    sub: { en: "Physician-supervised facial", id: "Facial dokter" },
-    tag: { en: "Maintenance", id: "Perawatan rutin" },
+    sub: { en: "Medical-grade facial protocol", id: "Protokol facial medis" },
+    tag: { en: "Skincare", id: "Skincare" },
     price: "IDR 250,000",
-    duration: "60 min",
+    duration: "60–90 min",
+    image: "https://images.unsplash.com/photo-1570172619644-dfd710f63844?w=800&auto=format&fit=crop&q=80",
     desc: {
-      en: "A medical-grade facial calibrated to your skin type and current condition — deep cleansing, extraction, LED, and barrier repair under physician supervision.",
-      id: "Facial medis yang disesuaikan dengan tipe dan kondisi kulit Anda — pembersihan dalam, ekstraksi, LED, dan pemulihan barrier di bawah pengawasan dokter.",
+      en: "A comprehensive facial tailored to your skin type and condition. Our medical-grade protocol deeply cleanses, exfoliates, and nourishes — addressing congestion, dullness, dehydration, and early signs of aging under physician supervision.",
+      id: "Facial komprehensif yang disesuaikan dengan tipe dan kondisi kulit Anda. Protokol medis kami membersihkan, eksfoliasi, dan menutrisi kulit secara mendalam — mengatasi pori tersumbat, kusam, dehidrasi, dan tanda penuaan dini di bawah pengawasan dokter.",
     },
-    benefits: ["Deep pore cleansing", "LED light therapy", "Custom mask formulation", "Suitable for sensitive skin"],
+    benefits: { en: ["Deep pore cleansing and extraction", "Improved skin clarity and radiance", "Balanced sebum production"], id: ["Pembersihan pori dan ekstraksi mendalam", "Kulit lebih jernih dan bercahaya", "Produksi sebum lebih seimbang"] },
     modalities: ["Deep cleansing", "Manual extraction", "LED phototherapy", "Custom mask"],
     accent: ["#E8E0D2", "#D4C5A8"],
   },
   {
-    id: "acne",
-    name: { en: "Acne Fighter", id: "Acne Fighter" },
-    sub: { en: "Active breakout protocol", id: "Protokol jerawat aktif" },
-    tag: { en: "For active acne", id: "Jerawat aktif" },
-    price: "IDR 350,000",
-    duration: "60–90 min",
-    desc: {
-      en: "A series-based programme that calms inflammation, reduces oil production, and clears acne lesions — tailored to severity and skin type by dr. Yeyen.",
-      id: "Program berbasis seri yang menenangkan peradangan, mengurangi produksi minyak, dan membersihkan jerawat — disesuaikan dengan tingkat keparahan dan tipe kulit oleh dr. Yeyen.",
-    },
-    benefits: ["Reduces active lesions", "Calms inflammation", "Regulates sebum", "Prevents new breakouts"],
-    modalities: ["Salicylic acid peel", "Medical facial", "Blue LED therapy", "Antibacterial topical"],
-    accent: ["#D7E4DC", "#A8C9B8"],
-  },
-  {
-    id: "scar",
-    name: { en: "Acne Scar Fighter", id: "Acne Scar Fighter" },
-    sub: { en: "Scar revision programme", id: "Program revisi bekas luka" },
-    tag: { en: "Scar repair", id: "Perbaikan bekas luka" },
+    id: "dermapen",
+    category: "rejuvenation",
+    name: { en: "Dermapen 4.0", id: "Dermapen 4.0" },
+    sub: { en: "Microneedling (Dermapen 4.0)", id: "Microneedling (Dermapen 4.0)" },
+    tag: { en: "Rejuvenation", id: "Peremajaan" },
     price: "IDR 500,000",
-    duration: "75 min",
+    duration: "45–60 min",
+    image: "https://images.unsplash.com/photo-1512290923902-8a9f11c4c494?w=800&auto=format&fit=crop&q=80",
     desc: {
-      en: "Collagen induction and resurfacing — measurable smoothing of atrophic acne scars over 4–6 sessions. Dermapen 4.0, fractional laser, and PDRN bio-regeneration.",
-      id: "Induksi kolagen dan resurfacing — penghalusan terukur bekas jerawat atrofi selama 4–6 sesi. Dermapen 4.0, laser fraksional, dan bio-regenerasi PDRN.",
+      en: "The world's most advanced microneedling device creates controlled micro-channels to stimulate collagen and elastin. Clinically proven for acne scars, enlarged pores, fine lines, and uneven texture with minimal downtime.",
+      id: "Perangkat microneedling tercanggih menciptakan mikro-saluran terkontrol untuk merangsang kolagen dan elastin. Terbukti klinis untuk bekas jerawat, pori membesar, garis halus, dan tekstur tidak merata dengan downtime minimal.",
     },
-    benefits: ["Reduces depth of ice-pick & boxcar scars", "Stimulates collagen", "Smooths texture", "Visible result in 4 weeks"],
-    modalities: ["Dermapen 4.0", "TCA cross", "Fractional laser", "PDRN bio-regeneration"],
+    benefits: { en: ["Reduces acne scars and PIH marks", "Minimises enlarged pores", "Stimulates collagen and elastin"], id: ["Mengurangi bekas jerawat dan PIH", "Memperkecil pori", "Merangsang kolagen dan elastin"] },
+    modalities: ["Dermapen 4.0", "PDRN booster", "Soothing mask"],
     accent: ["#E5DCE8", "#C5A8D4"],
   },
   {
-    id: "pigment",
-    name: { en: "Pigment Fighter", id: "Pigment Fighter" },
-    sub: { en: "Melasma & hyperpigmentation", id: "Melasma & hiperpigmentasi" },
-    tag: { en: "Gold standard", id: "Standar emas" },
+    id: "nd-yag",
+    category: "laser",
+    name: { en: "Nd:YAG Laser", id: "Laser Nd:YAG" },
+    sub: { en: "1064nm pigment laser", id: "Laser pigmen 1064nm" },
+    tag: { en: "Laser", id: "Laser" },
     price: "IDR 400,000",
-    duration: "45–60 min",
+    duration: "30–45 min",
+    image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=800&auto=format&fit=crop&q=80",
     desc: {
-      en: "Targeted protocols for melasma, sunspots, and post-inflammatory hyperpigmentation — calibrated for Fitzpatrick III–V skin types.",
-      id: "Protokol yang ditargetkan untuk melasma, bintik matahari, dan hiperpigmentasi pasca-inflamasi — dikalibrasi untuk tipe kulit Fitzpatrick III–V.",
+      en: "Gold-standard Nd:YAG laser at 1064nm selectively targets melanin without damaging surrounding tissue — visible improvement in melasma, hyperpigmentation, freckles, and overall skin tone, safe for Fitzpatrick IV–VI.",
+      id: "Laser Nd:YAG 1064nm secara selektif menargetkan melanin tanpa merusak jaringan sekitar — perbaikan terlihat pada melasma, hiperpigmentasi, bintik, dan warna kulit, aman untuk Fitzpatrick IV–VI.",
     },
-    benefits: ["Targets dermal pigment", "Safe for Asian skin", "No epidermal damage", "Long-term lightening"],
-    modalities: ["Nd:YAG 1064nm laser toning", "Chemical peel", "Prescription topical", "Sun-care protocol"],
+    benefits: { en: ["Targets melasma and hyperpigmentation", "Safe for darker skin tones", "Reduces freckles and sun spots"], id: ["Menargetkan melasma dan hiperpigmentasi", "Aman untuk kulit gelap", "Mengurangi bintik dan flek"] },
+    modalities: ["Nd:YAG 1064nm", "Laser toning", "Cooling protocol"],
     accent: ["#EAD9D2", "#D4A8A8"],
   },
   {
-    id: "contour",
-    name: { en: "Face Contouring", id: "Face Contouring" },
-    sub: { en: "Lifting & anti-ageing", id: "Lifting & anti-penuaan" },
-    tag: { en: "Lifting", id: "Pengencangan" },
+    id: "hifu",
+    category: "rejuvenation",
+    name: { en: "HIFU", id: "HIFU" },
+    sub: { en: "High-Intensity Focused Ultrasound", id: "Ultrasonik Terfokus Intensitas Tinggi" },
+    tag: { en: "Lifting", id: "Lifting" },
     price: "IDR 1,500,000",
-    duration: "90 min",
+    duration: "60–90 min",
+    image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&auto=format&fit=crop&q=80",
     desc: {
-      en: "Non-surgical lifting, tightening, and bio-regeneration — natural-looking definition with no downtime. HIFU plus bio-stimulators.",
-      id: "Lifting non-bedah, pengencangan, dan bio-regenerasi — definisi yang terlihat alami tanpa downtime.",
+      en: "Non-invasive lifting delivering focused ultrasound to foundational skin layers — the same depth as surgical facelifts. Stimulates new collagen for visible lifting of face, neck, and décolletage without surgery.",
+      id: "Lifting non-invasif dengan ultrasonik terfokus ke lapisan kulit fundamental — merangsang kolagen baru untuk pengangkatan wajah, leher, dan décolletage tanpa operasi.",
     },
-    benefits: ["SMAS layer lifting", "Jaw & jowl definition", "No incisions, no scars", "Results last 12–18 months"],
-    modalities: ["HIFU (Ultraformer)", "Profhilo", "PDRN injection", "Radiofrequency"],
+    benefits: { en: ["Non-surgical face and neck lifting", "Deep collagen remodelling", "Visible results in 2–3 months"], id: ["Lifting wajah dan leher non-bedah", "Remodeling kolagen dalam", "Hasil terlihat dalam 2–3 bulan"] },
+    modalities: ["HIFU (Ultraformer)", "SMAS-layer targeting", "Collagen stimulation"],
     accent: ["#E0DACE", "#C9B889"],
   },
   {
-    id: "multilaser",
-    name: { en: "Multi-Steps Laser", id: "Multi-Steps Laser" },
-    sub: { en: "Layered laser facial", id: "Facial laser berlapis" },
-    tag: { en: "Signature", id: "Khas" },
-    price: "IDR 800,000",
-    duration: "75 min",
+    id: "rf",
+    category: "rejuvenation",
+    name: { en: "Radio Frequency (RF)", id: "Radio Frequency (RF)" },
+    sub: { en: "Non-invasive skin tightening", id: "Pengencangan kulit non-invasif" },
+    tag: { en: "Rejuvenation", id: "Peremajaan" },
+    price: "IDR 600,000",
+    duration: "45–60 min",
+    image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&auto=format&fit=crop&q=80",
     desc: {
-      en: "A signature multi-modality session combining toning, fractional, and IPL in a single visit — for brighter, smoother, more even skin.",
-      id: "Sesi multi-modalitas khas yang menggabungkan toning, fraksional, dan IPL dalam satu kunjungan untuk kulit yang lebih cerah, halus, dan merata.",
+      en: "Controlled RF energy gently heats the deep dermis, stimulating collagen contraction and neocollagenesis for skin tightening, fine-line reduction, and face and body contouring.",
+      id: "Energi RF terkontrol memanaskan dermis dalam, merangsang kontraksi kolagen dan neokolagenesis untuk pengencangan kulit, mengurangi garis halus, dan kontur wajah serta tubuh.",
     },
-    benefits: ["Brightens overall tone", "Refines pores", "Reduces redness", "Stimulates collagen"],
-    modalities: ["Nd:YAG toning", "Fractional 1550nm", "IPL", "Cool-down mask"],
-    accent: ["#E5DCE8", "#C5A8D4"],
-  },
-  {
-    id: "cocktail",
-    name: { en: "Skin Cocktail", id: "Skin Cocktail" },
-    sub: { en: "Injectable skin boosters", id: "Booster injeksi" },
-    tag: { en: "Regenerative", id: "Regeneratif" },
-    price: "IDR 700,000",
-    duration: "45 min",
-    desc: {
-      en: "Customised injectable cocktails — polynucleotides, hyaluronic acid, peptides — placed precisely for hydration, glow, and bio-regeneration.",
-      id: "Koktail injeksi yang dikustomisasi — polinukleotida, asam hialuronat, peptida — ditempatkan dengan presisi untuk hidrasi, glow, dan bio-regenerasi.",
-    },
-    benefits: ["Deep hydration", "Improved skin quality", "Fine line reduction", "Healthy glow"],
-    modalities: ["Rejuran (PN)", "Profhilo", "Mesotherapy", "Vitamin cocktails"],
-    accent: ["#F0D9C8", "#E0AA88"],
-  },
-  {
-    id: "body",
-    name: { en: "Body Contour", id: "Body Contour" },
-    sub: { en: "Non-invasive sculpting", id: "Sculpting non-invasif" },
-    tag: { en: "Body", id: "Tubuh" },
-    price: "IDR 1,200,000",
-    duration: "60 min",
-    desc: {
-      en: "Targeted fat reduction and skin tightening for abdomen, flanks, arms, and thighs — no surgery, no downtime.",
-      id: "Pengurangan lemak terarah dan pengencangan kulit untuk perut, pinggul, lengan, dan paha — tanpa bedah, tanpa downtime.",
-    },
-    benefits: ["Reduces stubborn fat", "Tightens skin", "Contours specific zones", "Series of 4–6 sessions"],
-    modalities: ["Cryolipolysis", "Radiofrequency", "Vacuum massage", "Ultrasound cavitation"],
+    benefits: { en: ["Tightens and firms lax skin", "Reduces fine lines and wrinkles", "Non-invasive body contouring"], id: ["Mengencangkan kulit kendur", "Mengurangi garis halus", "Kontur tubuh non-invasif"] },
+    modalities: ["Monopolar/bipolar RF", "Collagen heating", "Contour protocols"],
     accent: ["#D7E4DC", "#A8C9B8"],
   },
   {
-    id: "hairremoval",
-    name: { en: "Hair Removal", id: "Hair Removal" },
-    sub: { en: "Permanent laser reduction", id: "Pengurangan laser permanen" },
-    tag: { en: "Permanent", id: "Permanen" },
-    price: "IDR 200,000",
-    duration: "15–60 min",
+    id: "mesotherapy",
+    category: "injectables",
+    name: { en: "Mesotherapy", id: "Mesotherapy" },
+    sub: { en: "Mesoderm vitamin infusion", id: "Infusi vitamin mesoderm" },
+    tag: { en: "Injectables", id: "Suntikan" },
+    price: "IDR 450,000",
+    duration: "30–45 min",
+    image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&auto=format&fit=crop&q=80",
     desc: {
-      en: "Dual-wavelength laser hair reduction (Alexandrite + Nd:YAG), safe for darker Asian skin tones. Series of 6–8 sessions for permanent reduction.",
-      id: "Pengurangan rambut laser dual-wavelength (Alexandrite + Nd:YAG), aman untuk warna kulit Asia. Seri 6–8 sesi untuk hasil permanen.",
+      en: "A customised cocktail of vitamins, minerals, amino acids, and hyaluronic acid delivered into the mesoderm for deep hydration, revitalisation, and brightening from within.",
+      id: "Koktail vitamin, mineral, asam amino, dan asam hialuronat yang disesuaikan dan disuntikkan ke mesoderm untuk hidrasi mendalam, revitalisasi, dan pencerahan dari dalam.",
     },
-    benefits: ["Permanent reduction", "Safe for darker skin", "Any body area", "Painless cooling tip"],
-    modalities: ["Alexandrite 755nm", "Nd:YAG 1064nm", "Cryogen cooling"],
-    accent: ["#E0DACE", "#C9B889"],
+    benefits: { en: ["Deep skin hydration and luminosity", "Active ingredients at target depth", "Improves tone and elasticity"], id: ["Hidrasi dan luminositas kulit dalam", "Bahan aktif pada kedalaman target", "Meningkatkan tone dan elastisitas"] },
+    modalities: ["Vitamin cocktails", "Hyaluronic acid", "Amino acid complexes"],
+    accent: ["#F0D9C8", "#E0AA88"],
   },
   {
-    id: "hair",
-    name: { en: "Hair Treatment", id: "Hair Treatment" },
-    sub: { en: "Scalp & hair restoration", id: "Restorasi kulit kepala & rambut" },
-    tag: { en: "Restoration", id: "Restorasi" },
-    price: "IDR 800,000",
-    duration: "60 min",
+    id: "chemical-peel",
+    category: "peels",
+    name: { en: "Chemical Peel", id: "Chemical Peel" },
+    sub: { en: "Medical-grade exfoliation", id: "Eksfoliasi medis" },
+    tag: { en: "Peels", id: "Peeling" },
+    price: "IDR 300,000",
+    duration: "30–45 min",
+    image: "https://images.unsplash.com/photo-1598440947619-37c3393e2e56?w=800&auto=format&fit=crop&q=80",
     desc: {
-      en: "Scalp restoration for thinning hair and shedding — PRP, mesotherapy, and low-level laser combine to thicken and regrow.",
-      id: "Pemulihan kulit kepala untuk penipisan dan kerontokan — PRP, mesoterapi, dan laser tingkat rendah berkombinasi untuk menebalkan dan menumbuhkan rambut.",
+      en: "Physician-selected medical peels remove damaged outer layers and stimulate renewal — addressing acne, post-inflammatory hyperpigmentation, melasma, and dull skin, core specialisations of our clinic.",
+      id: "Peeling medis yang dipilih dokter menghilangkan lapisan luar yang rusak dan merangsang peremajaan — mengatasi jerawat, hiperpigmentasi pasca-inflamasi, melasma, dan kulit kusam.",
     },
-    benefits: ["Thicker hair shafts", "Reduced shedding", "Improved scalp health", "Visible regrowth in 3 months"],
-    modalities: ["PRP injection", "Mesotherapy", "LLLT (laser cap)", "Topical minoxidil"],
+    benefits: { en: ["Treats acne and comedones", "Fades post-acne hyperpigmentation", "Improves texture and radiance"], id: ["Mengatasi jerawat dan komedo", "Memudarkan hiperpigmentasi pasca-jerawat", "Meningkatkan tekstur dan kilau"] },
+    modalities: ["Superficial peel", "Medium-depth peel", "Acne & pigment protocols"],
+    accent: ["#D7E4DC", "#A8C9B8"],
+  },
+  {
+    id: "dna-salmon",
+    category: "injectables",
+    name: { en: "DNA Salmon Therapy", id: "Terapi DNA Salmon" },
+    sub: { en: "PDRN polynucleotide therapy", id: "Terapi polinukleotida PDRN" },
+    tag: { en: "Injectables", id: "Suntikan" },
+    price: "IDR 700,000",
+    duration: "30–45 min",
+    image: "https://images.unsplash.com/photo-1631217868264-e178506a8a28?w=800&auto=format&fit=crop&q=80",
+    desc: {
+      en: "PDRN polynucleotides derived from salmon DNA stimulate tissue repair, accelerate healing, and intensively hydrate while activating fibroblasts for collagen and elastin synthesis.",
+      id: "Polinukleotida PDRN dari DNA salmon merangsang perbaikan jaringan, mempercepat penyembuhan, dan menghidrasi intensif sambil mengaktifkan fibroblas untuk sintesis kolagen dan elastin.",
+    },
+    benefits: { en: ["Accelerates skin repair and healing", "Intense cellular hydration", "Reduces inflammation and redness"], id: ["Mempercepat perbaikan kulit", "Hidrasi intensif seluler", "Mengurangi peradangan dan kemerahan"] },
+    modalities: ["PDRN (PLINEST)", "Micro-injection", "Bio-regeneration"],
+    accent: ["#E5DCE8", "#C5A8D4"],
+  },
+  {
+    id: "vitamin-booster",
+    category: "injectables",
+    name: { en: "Vitamin & Booster Injections", id: "Injeksi Vitamin & Booster" },
+    sub: { en: "Physician-administered boosters", id: "Booster oleh dokter" },
+    tag: { en: "Injectables", id: "Suntikan" },
+    price: "IDR 200,000",
+    duration: "15–30 min",
+    image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&auto=format&fit=crop&q=80",
+    desc: {
+      en: "High-potency vitamins and nutritional compounds delivered for maximum bioavailability — Vitamin C brightening, Immune Booster, and Whitening complexes tailored to your goals.",
+      id: "Vitamin dan nutrisi berpotensi tinggi untuk bioavailabilitas maksimal — Vitamin C pencerah, Immune Booster, dan kompleks Whitening disesuaikan dengan tujuan Anda.",
+    },
+    benefits: { en: ["Higher bioavailability than oral supplements", "Vitamin C: brightening & antioxidant", "Immune & whitening protocols available"], id: ["Bioavailabilitas lebih tinggi dari oral", "Vitamin C: pencerah & antioksidan", "Protokol imun & whitening tersedia"] },
+    modalities: ["Vitamin C IV/IM", "Immune booster", "Whitening complex"],
     accent: ["#E8E0D2", "#D4C5A8"],
+  },
+  {
+    id: "electrocautery",
+    category: "skincare",
+    name: { en: "Electrocautery", id: "Elektrokauter (Cauter)" },
+    sub: { en: "Precise lesion removal", id: "Penghapusan lesi presisi" },
+    tag: { en: "Skincare", id: "Skincare" },
+    price: "IDR 150,000",
+    duration: "15–30 min",
+    image: "https://images.unsplash.com/photo-1551076805-e186903961b2?w=800&auto=format&fit=crop&q=80",
+    desc: {
+      en: "Physician-performed electrocautery removes benign skin tags, milia, sebaceous hyperplasia, and small warts with controlled electrical current — quick, targeted, minimal scarring.",
+      id: "Elektrokauter yang dilakukan dokter menghilangkan skin tag, milia, hiperplasia sebasea, dan kutil kecil dengan arus listrik terkontrol — cepat, presisi, bekas luka minimal.",
+    },
+    benefits: { en: ["Precise removal of skin tags and milia", "Minimal surrounding tissue damage", "Quick in-clinic procedure"], id: ["Penghapusan presisi skin tag dan milia", "Kerusakan jaringan sekitar minimal", "Prosedur cepat di klinik"] },
+    modalities: ["Electrocautery", "Topical anaesthetic", "Wound care protocol"],
+    accent: ["#EAD9D2", "#D4A8A8"],
   },
 ];
 
-// Top-level treatment categories ("What We Do")
+// Top-level treatment categories ("What We Do") — linked to core procedures
 export const FIGHTERS = [
-  { id: "acne", treatId: "acne", name: { en: "Acne Fighter", id: "Acne Fighter" }, sub: { en: "For active breakouts", id: "Untuk jerawat aktif" } },
-  { id: "pigment", treatId: "pigment", name: { en: "Pigment Fighter", id: "Pigment Fighter" }, sub: { en: "Melasma & hyperpigmentation", id: "Melasma & hiperpigmentasi" } },
-  { id: "scar", treatId: "scar", name: { en: "Scar Fighter", id: "Scar Fighter" }, sub: { en: "Acne scars & texture", id: "Bekas jerawat & tekstur" } },
-  { id: "contour", treatId: "contour", name: { en: "Face Contouring", id: "Face Contouring" }, sub: { en: "Lifting & anti-ageing", id: "Lifting & anti-penuaan" } },
+  { id: "acne", treatId: "chemical-peel", name: { en: "Acne Fighter", id: "Acne Fighter" }, sub: { en: "For active breakouts", id: "Untuk jerawat aktif" } },
+  { id: "pigment", treatId: "nd-yag", name: { en: "Pigment Fighter", id: "Pigment Fighter" }, sub: { en: "Melasma & hyperpigmentation", id: "Melasma & hiperpigmentasi" } },
+  { id: "scar", treatId: "dermapen", name: { en: "Scar Fighter", id: "Scar Fighter" }, sub: { en: "Acne scars & texture", id: "Bekas jerawat & tekstur" } },
+  { id: "contour", treatId: "hifu", name: { en: "Face Contouring", id: "Face Contouring" }, sub: { en: "Lifting & anti-ageing", id: "Lifting & anti-penuaan" } },
 ];
 
 export const TEAM = [
@@ -506,7 +527,26 @@ export const WHY = [
   },
 ];
 
-export const WHATSAPP_URL = "https://api.whatsapp.com/send/?phone=6281261884912&text=Halo+Skinderma+Aesthetic+Clinic%21+Saya+ingin+mengetahui+lebih+lanjut+tentang+layanan+Anda+dan+ingin+membuat+janji+konsultasi.&type=phone_number&app_absent=0";
+export const WHATSAPP_PHONE = "6281261884912";
+
+export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(
+  "Halo SKINDERMA! Saya ingin mengetahui lebih lanjut tentang layanan Anda dan ingin membuat janji konsultasi."
+)}`;
+
+/** Build WhatsApp deep link for the multi-step consultation booking funnel. */
+export function buildConsultationWhatsAppUrl({ name, visitFrom, concerns, clinicId, lang }) {
+  const clinic = LOCATIONS.find((l) => l.id === clinicId);
+  const clinicLine = clinic
+    ? `\n- Preferred clinic: ${clinic.name[lang]}`
+    : "";
+  const text =
+    `Hello SKINDERMA, I would like to book an expert skin consultation. Here are my details:\n` +
+    `- Name: ${name.trim()}\n` +
+    `- Location: ${visitFrom}\n` +
+    `- Skin Concerns: ${concerns.join(", ")}` +
+    clinicLine;
+  return `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(text)}`;
+}
 
 export const SOCIAL = [
   { id: "instagram", label: "Instagram", handle: "@skindermaclinic", url: "https://www.instagram.com/skindermaclinic/" },

@@ -10,11 +10,16 @@ export function TreatmentsScreen({ lang, onOpenTreatment, onBook }) {
 
   const filters = [
     { id: 'all', en: 'All', id_l: 'Semua' },
-    { id: 'maintenance', en: 'Maintenance', id_l: 'Rutin' },
-    { id: 'scar', en: 'Scars', id_l: 'Bekas luka' },
-    { id: 'pigment', en: 'Pigment', id_l: 'Pigmen' },
-    { id: 'lift', en: 'Lifting', id_l: 'Lifting' },
+    { id: 'skincare', en: 'Skincare', id_l: 'Skincare' },
+    { id: 'injectables', en: 'Injectables', id_l: 'Suntikan' },
+    { id: 'laser', en: 'Laser', id_l: 'Laser' },
+    { id: 'rejuvenation', en: 'Rejuvenation', id_l: 'Peremajaan' },
+    { id: 'peels', en: 'Peels', id_l: 'Peeling' },
   ];
+
+  const visible = filter === 'all'
+    ? TREATMENTS
+    : TREATMENTS.filter((tr) => tr.category === filter);
 
   return (
     <div style={{ paddingBottom: 24, background: 'var(--cream)', minHeight: '100%' }}>
@@ -41,7 +46,7 @@ export function TreatmentsScreen({ lang, onOpenTreatment, onBook }) {
       </div>
 
       <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {TREATMENTS.map(tr => (
+        {visible.map(tr => (
           <div key={tr.id} onClick={() => onOpenTreatment(tr.id)} role="button" tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenTreatment(tr.id); } }}
             style={{ background: '#fff', borderRadius: 22, overflow: 'hidden', border: '1px solid var(--line)', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}>
@@ -131,7 +136,7 @@ export function TreatmentDetail({ tr, lang, onClose, onBook }) {
           <div style={{ marginBottom: 28 }}>
             <div style={{ fontFamily: 'var(--serif)', fontSize: 18, color: 'var(--ink)', marginBottom: 14 }}>{lang === 'en' ? "What's included" : 'Yang termasuk'}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {tr.benefits.map((b, i) => (
+              {(tr.benefits[lang] || tr.benefits.en).map((b, i) => (
                 <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                   <div style={{ width: 22, height: 22, borderRadius: 99, background: 'rgba(27,107,95,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{Ico.check('#1B6B5F')}</div>
                   <span style={{ fontSize: 13.5, color: 'var(--ink)' }}>{b}</span>

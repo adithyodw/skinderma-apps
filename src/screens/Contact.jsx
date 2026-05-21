@@ -1,6 +1,6 @@
 // Contact.jsx — Locations, contact methods, booking sheet
 import React from 'react';
-import { COPY, LOCATIONS, SOCIAL, WHATSAPP_URL } from '../data.js';
+import { COPY, LOCATIONS, SOCIAL, WHATSAPP_URL, buildConsultationWhatsAppUrl } from '../data.js';
 import { Pill, Ico } from '../shared.jsx';
 
 export function ContactScreen({ lang, onBook }) {
@@ -127,29 +127,96 @@ export function ContactScreen({ lang, onBook }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// BOOKING BOTTOM SHEET
+// BOOKING BOTTOM SHEET — 3-step consultation funnel → WhatsApp
 // ─────────────────────────────────────────────────────────────
-export function BookingSheet({ lang, onClose }) {
-  const [step, setStep] = React.useState(0);
-  const [name, setName] = React.useState('');
-  const [concern, setConcern] = React.useState(null);
-  const [location, setLocation] = React.useState('centre');
+const VISIT_REGIONS = ['Batam', 'Singapore', 'Malaysia', 'Other'];
 
-  const concerns = [
-    { id: 'acne', en: 'Acne & breakouts', id_l: 'Jerawat' },
-    { id: 'pigment', en: 'Melasma & pigment', id_l: 'Melasma & pigmen' },
-    { id: 'aging', en: 'Lifting & firming', id_l: 'Lifting & kekencangan' },
-    { id: 'texture', en: 'Scars & texture', id_l: 'Bekas luka & tekstur' },
-    { id: 'glow', en: 'Glow & maintenance', id_l: 'Glow & perawatan rutin' },
-    { id: 'other', en: 'Something else', id_l: 'Lainnya' },
-  ];
+const CONCERN_OPTIONS = [
+  { id: 'acne', en: 'Acne & breakouts', id_l: 'Jerawat & breakout' },
+  { id: 'pigment', en: 'Melasma & pigment', id_l: 'Melasma & pigmen' },
+  { id: 'aging', en: 'Lifting & firming', id_l: 'Lifting & kekencangan' },
+  { id: 'texture', en: 'Scars & texture', id_l: 'Bekas luka & tekstur' },
+  { id: 'glow', en: 'Glow & maintenance', id_l: 'Glow & perawatan rutin' },
+  { id: 'other', en: 'Something else', id_l: 'Lainnya' },
+];
+
+function bookingReducer(state, action) {
+  switch (action.type) {
+    case 'SET_NAME':
+      return { ...state, name: action.value };
+    case 'SET_VISIT_FROM':
+      return { ...state, visitFrom: action.value };
+    case 'TOGGLE_CONCERN': {
+      const has = state.concerns.includes(action.id);
+      return {
+        ...state,
+        concerns: has
+          ? state.concerns.filter((c) => c !== action.id)
+          : [...state.concerns, action.id],
+      };
+    }
+    case 'SET_CLINIC':
+      return { ...state, clinicId: action.value };
+    case 'SET_STEP':
+      return { ...state, step: action.value };
+    case 'NEXT':
+      return { ...state, step: Math.min(state.step + 1, 2) };
+    case 'BACK':
+      return { ...state, step: Math.max(state.step - 1, 0) };
+    default:
+      return state;
+  }
+}
+
+const bookingInitial = {
+  step: 0,
+  name: '',
+  visitFrom: null,
+  concerns: [],
+  clinicId: 'centre',
+};
+
+export function BookingSheet({ lang, onClose }) {
+  const [state, dispatch] = React.useReducer(bookingReducer, bookingInitial);
+  const { step, name, visitFrom, concerns, clinicId } = state;
+
+  const concernLabels = concerns.map((id) => {
+    const c = CONCERN_OPTIONS.find((o) => o.id === id);
+    return c ? (lang === 'en' ? c.en : c.id_l) : id;
+  });
+
+  const canContinueStep0 = name.trim().length > 0 && visitFrom;
+  const canContinueStep1 = concerns.length > 0;
+
+  const handleContinue = () => {
+    if (step === 0 && !canContinueStep0) return;
+    if (step === 1 && !canContinueStep1) return;
+    if (step < 2) {
+      dispatch({ type: 'NEXT' });
+      return;
+    }
+    const url = buildConsultationWhatsAppUrl({
+      name,
+      visitFrom,
+      concerns: concernLabels,
+      clinicId,
+      lang,
+    });
+    window.location.href = url;
+    onClose();
+  };
+
+  const continueDisabled =
+    (step === 0 && !canContinueStep0) ||
+    (step === 1 && !canContinueStep1);
 
   return (
     <>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, animation: 'fadeIn 200ms ease' }}/>
       <div role="dialog" aria-modal="true" aria-label={lang === 'en' ? 'Book consultation' : 'Buat janji konsultasi'} style={{
         position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 101, background: '#fff', borderRadius: '24px 24px 0 0',
-        padding: '14px 0 32px', animation: 'sheetSlide 320ms cubic-bezier(0.16, 1, 0.3, 1)', maxHeight: '88%', display: 'flex', flexDirection: 'column',
+        padding: '14px 0 calc(16px + env(safe-area-inset-bottom, 0px))',
+        animation: 'sheetSlide 320ms cubic-bezier(0.16, 1, 0.3, 1)', maxHeight: '88%', display: 'flex', flexDirection: 'column',
       }}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
           <div style={{ width: 40, height: 4, borderRadius: 99, background: 'rgba(0,0,0,0.15)' }}/>
@@ -169,7 +236,7 @@ export function BookingSheet({ lang, onClose }) {
                   : (lang === 'en' ? 'Which clinic?' : 'Klinik mana?')}
               </div>
             </div>
-            <button onClick={onClose} aria-label={lang === 'en' ? 'Close' : 'Tutup'} style={{ width: 32, height: 32, borderRadius: 99, background: 'var(--cream)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{Ico.close('#666')}</button>
+            <button type="button" onClick={onClose} aria-label={lang === 'en' ? 'Close' : 'Tutup'} style={{ width: 32, height: 32, borderRadius: 99, background: 'var(--cream)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{Ico.close('#666')}</button>
           </div>
         </div>
 
@@ -179,54 +246,96 @@ export function BookingSheet({ lang, onClose }) {
               <label htmlFor="booking-name" style={{ fontSize: 11.5, color: 'var(--ink-soft)', letterSpacing: 0.4, textTransform: 'uppercase', fontWeight: 600 }}>
                 {lang === 'en' ? 'Your name' : 'Nama Anda'}
               </label>
-              <input id="booking-name" value={name} onChange={e => setName(e.target.value)} placeholder={lang === 'en' ? 'e.g. Mei Lin' : 'cth. Mei Lin'} style={{ width: '100%', padding: '14px 16px', marginTop: 8, marginBottom: 18, border: '1px solid var(--line)', borderRadius: 14, fontSize: 14.5, fontFamily: 'inherit', background: '#fff', boxSizing: 'border-box' }}/>
+              <input
+                id="booking-name"
+                type="text"
+                autoComplete="name"
+                value={name}
+                onChange={(e) => dispatch({ type: 'SET_NAME', value: e.target.value })}
+                placeholder={lang === 'en' ? 'e.g. Mei Lin' : 'cth. Mei Lin'}
+                style={{ width: '100%', padding: '14px 16px', marginTop: 8, marginBottom: 18, border: `1px solid ${name.trim() ? 'var(--teal)' : 'var(--line)'}`, borderRadius: 14, fontSize: 14.5, fontFamily: 'inherit', background: '#fff', boxSizing: 'border-box' }}
+              />
               <span style={{ fontSize: 11.5, color: 'var(--ink-soft)', letterSpacing: 0.4, textTransform: 'uppercase', fontWeight: 600 }}>
                 {lang === 'en' ? 'Where are you visiting from?' : 'Dari mana Anda berkunjung?'}
               </span>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
-                {['Batam', 'Singapore', 'Malaysia', 'Other'].map(o => (
-                  <button key={o} style={{ padding: '12px 10px', borderRadius: 12, border: '1px solid var(--line)', background: '#fff', fontSize: 13, color: 'var(--ink)', cursor: 'pointer' }}>{o}</button>
-                ))}
+                {VISIT_REGIONS.map((o) => {
+                  const active = visitFrom === o;
+                  return (
+                    <button
+                      key={o}
+                      type="button"
+                      onClick={() => dispatch({ type: 'SET_VISIT_FROM', value: o })}
+                      aria-pressed={active}
+                      style={{
+                        padding: '12px 10px', borderRadius: 12, fontSize: 13, fontWeight: active ? 600 : 500, cursor: 'pointer',
+                        background: active ? 'var(--teal)' : '#fff',
+                        color: active ? '#fff' : 'var(--ink)',
+                        border: active ? '1px solid var(--teal)' : '1px solid var(--line)',
+                      }}
+                    >{o}</button>
+                  );
+                })}
               </div>
             </div>
           )}
 
           {step === 1 && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              {concerns.map(c => (
-                <button key={c.id} onClick={() => setConcern(c.id)} aria-pressed={concern === c.id} style={{
-                  padding: '18px 14px', borderRadius: 16, cursor: 'pointer',
-                  background: concern === c.id ? 'var(--teal)' : '#fff', color: concern === c.id ? '#fff' : 'var(--ink)',
-                  border: concern === c.id ? 'none' : '1px solid var(--line)', fontSize: 13, fontWeight: 500, textAlign: 'left', minHeight: 80,
-                  display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                }}>
-                  <div style={{ width: 24, height: 24, borderRadius: 99, background: concern === c.id ? 'rgba(255,255,255,0.2)' : 'rgba(27,107,95,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {concern === c.id ? Ico.check('#fff') : <span style={{ width: 6, height: 6, borderRadius: 99, background: '#1B6B5F' }}/>}
-                  </div>
-                  <span>{lang === 'en' ? c.en : c.id_l}</span>
-                </button>
-              ))}
+              {CONCERN_OPTIONS.map((c) => {
+                const selected = concerns.includes(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => dispatch({ type: 'TOGGLE_CONCERN', id: c.id })}
+                    aria-pressed={selected}
+                    style={{
+                      padding: '18px 14px', borderRadius: 16, cursor: 'pointer',
+                      background: selected ? 'var(--teal)' : '#fff',
+                      color: selected ? '#fff' : 'var(--ink)',
+                      border: selected ? '1px solid var(--teal)' : '1px solid var(--line)',
+                      fontSize: 13, fontWeight: 500, textAlign: 'left', minHeight: 80,
+                      display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                    }}
+                  >
+                    <div style={{ width: 24, height: 24, borderRadius: 99, background: selected ? 'rgba(255,255,255,0.2)' : 'rgba(27,107,95,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {selected ? Ico.check('#fff') : <span style={{ width: 6, height: 6, borderRadius: 99, background: '#1B6B5F' }}/>}
+                    </div>
+                    <span>{lang === 'en' ? c.en : c.id_l}</span>
+                  </button>
+                );
+              })}
             </div>
           )}
 
           {step === 2 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {LOCATIONS.map(l => (
-                <button key={l.id} onClick={() => setLocation(l.id)} aria-pressed={location === l.id} style={{
-                  display: 'flex', gap: 14, padding: 16, borderRadius: 16,
-                  background: location === l.id ? 'rgba(27,107,95,0.06)' : '#fff',
-                  border: location === l.id ? '1px solid var(--teal)' : '1px solid var(--line)',
-                  cursor: 'pointer', textAlign: 'left', alignItems: 'center',
-                }}>
-                  <div style={{ width: 20, height: 20, borderRadius: 99, flexShrink: 0, border: location === l.id ? 'none' : '1.5px solid var(--line)', background: location === l.id ? 'var(--teal)' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {location === l.id && <span style={{ width: 8, height: 8, borderRadius: 99, background: '#fff' }}/>}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{l.name[lang]}</div>
-                    <div style={{ fontSize: 12, color: 'var(--ink-soft)', marginTop: 2 }}>{l.addr}</div>
-                  </div>
-                </button>
-              ))}
+              {LOCATIONS.map((l) => {
+                const active = clinicId === l.id;
+                return (
+                  <button
+                    key={l.id}
+                    type="button"
+                    onClick={() => dispatch({ type: 'SET_CLINIC', value: l.id })}
+                    aria-pressed={active}
+                    style={{
+                      display: 'flex', gap: 14, padding: 16, borderRadius: 16,
+                      background: active ? 'rgba(27,107,95,0.06)' : '#fff',
+                      border: active ? '1px solid var(--teal)' : '1px solid var(--line)',
+                      cursor: 'pointer', textAlign: 'left', alignItems: 'center',
+                    }}
+                  >
+                    <div style={{ width: 20, height: 20, borderRadius: 99, flexShrink: 0, border: active ? 'none' : '1.5px solid var(--line)', background: active ? 'var(--teal)' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {active && <span style={{ width: 8, height: 8, borderRadius: 99, background: '#fff' }}/>}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{l.name[lang]}</div>
+                      <div style={{ fontSize: 12, color: 'var(--ink-soft)', marginTop: 2 }}>{l.addr}</div>
+                    </div>
+                  </button>
+                );
+              })}
 
               <div style={{ marginTop: 14, padding: 18, background: 'var(--cream)', borderRadius: 16 }}>
                 <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>
@@ -244,17 +353,23 @@ export function BookingSheet({ lang, onClose }) {
 
         <div style={{ padding: '16px 22px 0', borderTop: '1px solid var(--line)', marginTop: 14, display: 'flex', gap: 10 }}>
           {step > 0 && (
-            <button onClick={() => setStep(step - 1)} style={{ padding: '15px 22px', background: '#fff', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: 99, fontSize: 13.5, fontWeight: 600, cursor: 'pointer' }}>
+            <button type="button" onClick={() => dispatch({ type: 'BACK' })} style={{ padding: '15px 22px', background: '#fff', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: 99, fontSize: 13.5, fontWeight: 600, cursor: 'pointer' }}>
               {lang === 'en' ? 'Back' : 'Kembali'}
             </button>
           )}
-          <button onClick={() => {
-            if (step < 2) { setStep(step + 1); }
-            else { window.open(WHATSAPP_URL, '_blank', 'noopener,noreferrer'); onClose(); }
-          }} style={{
-            flex: 1, background: 'var(--teal)', color: '#fff', border: 'none', padding: '15px 18px', borderRadius: 99, fontSize: 14, fontWeight: 600,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', boxShadow: '0 6px 16px rgba(27,107,95,0.25)',
-          }}>
+          <button
+            type="button"
+            onClick={handleContinue}
+            disabled={continueDisabled}
+            style={{
+              flex: 1,
+              background: continueDisabled ? 'rgba(27,107,95,0.35)' : 'var(--teal)',
+              color: '#fff', border: 'none', padding: '15px 18px', borderRadius: 99, fontSize: 14, fontWeight: 600,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              cursor: continueDisabled ? 'not-allowed' : 'pointer',
+              boxShadow: continueDisabled ? 'none' : '0 6px 16px rgba(27,107,95,0.25)',
+            }}
+          >
             {step < 2 ? (<>{lang === 'en' ? 'Continue' : 'Lanjut'} {Ico.arrow('#fff')}</>) : (<>{Ico.whatsapp('#fff')} {lang === 'en' ? 'Open WhatsApp' : 'Buka WhatsApp'}</>)}
           </button>
         </div>

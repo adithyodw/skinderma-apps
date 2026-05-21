@@ -41,19 +41,8 @@ const TABS = [
 function BottomNav({ active, onChange, lang }) {
   const t = COPY[lang];
   return (
-    <nav aria-label={lang === 'en' ? 'Primary' : 'Utama'} style={{
-      position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 50,
-      // Respect the iOS home-indicator safe area on real devices (0 on desktop).
-      paddingBottom: 'calc(28px + env(safe-area-inset-bottom, 0px))',
-      background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.96) 50%)',
-    }}>
-      <div style={{
-        margin: '0 14px', background: 'rgba(255,255,255,0.92)',
-        backdropFilter: 'blur(20px) saturate(160%)', WebkitBackdropFilter: 'blur(20px) saturate(160%)',
-        border: '1px solid rgba(0,0,0,0.04)', borderRadius: 26, padding: '8px 6px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-around',
-        boxShadow: '0 8px 28px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)',
-      }}>
+    <nav className="bottom-nav" aria-label={lang === 'en' ? 'Primary' : 'Utama'}>
+      <div className="bottom-nav__inner">
         {TABS.map(tab => {
           const isActive = active === tab.id;
           const color = isActive ? '#1B6B5F' : '#999';
@@ -91,8 +80,8 @@ function PhoneApp({ lang, mobile = false, onLangChange }) {
   const treatment = openTreatment ? TREATMENTS.find(t => t.id === openTreatment) : null;
 
   return (
-    <div style={{ position: 'absolute', inset: 0, background: '#fff', overflow: 'hidden', color: 'var(--ink)' }}>
-      <main ref={scrollRef} style={{ position: 'absolute', inset: 0, overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', paddingBottom: 110 }}>
+    <div className="phone-app">
+      <main ref={scrollRef} className="phone-app__main">
         {tab === 'home' && <HomeScreen lang={lang} mobile={mobile} onNav={handleNav} onBook={handleBook} onOpenTreatment={(id) => setOpenTreatment(id)}/>}
         {tab === 'treatments' && <TreatmentsScreen lang={lang} onOpenTreatment={(id) => setOpenTreatment(id)} onBook={handleBook}/>}
         {tab === 'about' && <AboutScreen lang={lang} onBook={handleBook}/>}

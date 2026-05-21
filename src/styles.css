@@ -23,6 +23,10 @@ body {
   background: #EFE9DF;
 }
 
+#root {
+  min-height: 100%;
+}
+
 /* Hide horizontal-scroll bars in carousels */
 ::-webkit-scrollbar { display: none; }
 
@@ -47,16 +51,67 @@ html, body { height: 100%; }
 body.mobile-app {
   overflow: hidden;
   overscroll-behavior: none;
+  background: #fff;
+  height: 100%;
+  height: 100dvh;
 }
 
 .mobile-stage {
   position: fixed;
   inset: 0;
   width: 100%;
-  height: 100vh;        /* fallback */
-  height: 100dvh;       /* tracks the real viewport incl. browser chrome */
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
   background: #fff;
   overflow: hidden;
+}
+
+/* Phone app shell — single scroll surface inside main */
+.phone-app {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  overflow: hidden;
+  color: var(--ink);
+}
+
+.phone-app__main {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  /* Clears fixed bottom nav + home indicator */
+  padding-bottom: calc(96px + env(safe-area-inset-bottom, 16px));
+}
+
+/* Bottom tab bar: solid white to physical bottom; icons sit above home indicator */
+.bottom-nav {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  background: #fff;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  border-top: 1px solid var(--line);
+}
+
+.bottom-nav__inner {
+  margin: 10px 14px 12px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: 26px;
+  padding: 8px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 /* Floating language toggle for mobile (banner is hidden there).
@@ -66,6 +121,12 @@ body.mobile-app {
   top: calc(env(safe-area-inset-top, 0px) + 8px);
   right: 12px;
   z-index: 60;
+}
+
+/* Capacitor / iOS WebView: reduce rubber-band bounce on the shell */
+body.mobile-app,
+.mobile-stage {
+  touch-action: manipulation;
 }
 
 @media (prefers-reduced-motion: reduce) {

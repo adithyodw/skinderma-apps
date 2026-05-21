@@ -239,9 +239,36 @@ const TREATMENT_VISUALS = {
 };
 
 export function TreatmentVisual({ tr, height, ratio, style, corner = 'SKINDERMA' }) {
+  if (tr.image) {
+    return (
+      <div style={{
+        position: 'relative', overflow: 'hidden',
+        height, aspectRatio: ratio, ...style,
+        background: `linear-gradient(135deg, ${tr.accent[0]} 0%, ${tr.accent[1]} 100%)`,
+      }}>
+        <img
+          src={tr.image}
+          alt=""
+          loading="lazy"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(180deg, rgba(15,77,68,0.05) 0%, rgba(15,77,68,0.35) 100%)',
+        }}/>
+        {corner && (
+          <div style={{
+            position: 'absolute', bottom: 10, right: 12,
+            fontFamily: 'var(--serif)', fontSize: 9.5, letterSpacing: 1.2,
+            color: 'rgba(255,255,255,0.85)', fontStyle: 'italic', fontWeight: 500,
+          }}>{corner}</div>
+        )}
+      </div>
+    );
+  }
   return (
     <VisualFrame accent={tr.accent} height={height} ratio={ratio} style={style} corner={corner}>
-      {TREATMENT_VISUALS[tr.id]}
+      {TREATMENT_VISUALS[tr.id] || TREATMENT_VISUALS.facial}
     </VisualFrame>
   );
 }
