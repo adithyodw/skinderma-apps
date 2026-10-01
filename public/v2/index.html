@@ -69,12 +69,16 @@ Add a prop
   .book-card { position:fixed; z-index:5; left:max(12px, env(safe-area-inset-left)); bottom:calc(44px + env(safe-area-inset-bottom));
     width:228px; background:#fffefb; border:1px solid #e6e0d4; border-radius:14px; padding:12px;
     box-shadow:0 10px 28px rgba(63,74,60,.08); }
-  .book-card strong { display:block; font-size:13px; letter-spacing:-.02em; color:#2c3a32; }
-  .book-card p { margin:4px 0 10px; font-size:12px; line-height:1.35; color:#6d7468; }
-  .book-actions { display:flex; gap:6px; }
-  .book-actions a { flex:1; text-align:center; text-decoration:none; border-radius:99px; padding:7px 8px; font-size:12px; font-weight:700; }
-  .book-actions a.app { background:#fff; color:#3f4a3c; border:1px solid #e6e0d4; }
-  .book-actions a.wa { background:#3f7d68; color:#fff; }
+  .book-card strong { display:block; font-size:13px; line-height:1.2; letter-spacing:-.02em; color:#2c3a32; }
+  .book-card p { margin:4px 0 8px; font-size:12px; line-height:1.35; color:#6d7468; }
+  .book-card .meta { display:flex; align-items:center; flex-wrap:nowrap; gap:6px; margin:0 0 10px; font-size:11px; line-height:1; color:#6d7468; white-space:nowrap; }
+  .book-card .meta .stars { color:#C4A265; font-size:11px; letter-spacing:0; flex:none; }
+  .book-card .meta .hours { overflow:hidden; text-overflow:ellipsis; }
+  .book-actions { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .book-actions a { display:flex; align-items:center; justify-content:center; height:34px; padding:0 10px; box-sizing:border-box;
+    text-align:center; text-decoration:none; border-radius:99px; font-size:12px; font-weight:700; line-height:1; white-space:nowrap; border:1px solid transparent; }
+  .book-actions a.app { background:#fff; color:#3f4a3c; border-color:#d9d2c2; }
+  .book-actions a.wa { background:#3f7d68; color:#fff; border-color:#3f7d68; }
   .ticker { position:fixed; z-index:4; left:0; right:0; bottom:0; min-height:32px; display:flex; align-items:center;
     gap:12px; padding:6px max(14px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
     background:rgba(255,253,248,.96); border-top:1px solid #e6e0d4; overflow:hidden; }
@@ -113,11 +117,12 @@ Add a prop
   @media (max-width: 860px) {
     .sub { display:none; }
     h1 { font-size:12.5px; }
-    .book-card { left:10px; right:10px; width:auto; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 10px; }
-    .book-card p { display:none; }
-    .book-card strong { font-size:12px; }
-    .book-actions { flex:none; }
-    .book-actions a { padding:7px 12px; }
+    .book-card { left:10px; right:10px; width:auto; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:10px; padding:8px 10px; }
+    .book-card p, .book-card .meta .stars { display:none; }
+    .book-card strong { font-size:12.5px; }
+    .book-card .meta { margin:4px 0 0; }
+    .book-actions { grid-template-columns:auto auto; }
+    .book-actions a { height:36px; padding:0 14px; }
     #toast { bottom:calc(104px + env(safe-area-inset-bottom)); }
     #onboard { bottom:calc(156px + env(safe-area-inset-bottom)); }
     .drawer {
@@ -140,8 +145,6 @@ Add a prop
       background:#2c3a32; color:#fff; font-size:12.5px; padding:9px 14px; border-radius:99px; opacity:0; pointer-events:none;
       transition:opacity .25s, transform .25s; max-width:calc(100% - 24px); text-align:center; }
     #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-    .book-card .meta { display:flex; align-items:center; gap:6px; margin-top:6px; font-size:11px; color:#8a6a12; }
-    .book-card .meta i { font-style:normal; color:#C4A265; letter-spacing:1px; }
     body.night canvas { filter:saturate(.92) brightness(.94); }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -168,7 +171,7 @@ Add a prop
   <div>
     <strong>Book with us</strong>
     <p>Real doctors, real clinic. Same booking as the patient app.</p>
-    <div class="meta"><i>★★★★★</i><span>Loved by patients · Open daily 10–8</span></div>
+    <div class="meta"><span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span><span class="hours">Open daily 10&ndash;8</span></div>
   </div>
   <div class="book-actions">
     <a class="app" href="/">Patient app</a>
@@ -224,7 +227,7 @@ Add a prop
   let W = 1280, H = 800, simT = 0, speed = 1, paused = false, showFull = true, pinkUntil = 0;
   let backend = false, selected = null, hover = null, drag = null;
   let night = false, followH = null, tourTimer = 0, tourIdx = 0, lowQ = false, slowFrames = 0;
-  const TOUR = ['R-101', 'consult', 'treat', 'S-120', 'L-105', 'f2'];
+  const TOUR = ['R-101', 'L-105', 'consult', 'T-302', 'T-303', 'S-120', 'P-110', 'M-130', 'f2'];
   const actors = [];
   const PROPS = [];
   const termLines = [];
@@ -239,14 +242,15 @@ Add a prop
     { id:'R-101', short:'Reception', name:'Reception & Waiting Lounge', gx:11, gy:10, gw:16, gh:9, z:0, floor:'#fff5f8', grid:'#f6d5e0', wall:COL.blush, shell:true },
     { id:'C-201', short:'Consult A', name:'Consultation C-201', gx:24, gy:2, gw:5, gh:8, z:0, floor:'#f3fbf7', grid:'#d7f3e6', wall:COL.mint, shell:true },
     { id:'C-202', short:'Consult B', name:'Consultation C-202', gx:30, gy:2, gw:5, gh:8, z:0, floor:'#f3fbf7', grid:'#d7f3e6', wall:COL.mint, shell:true },
-    { id:'P-110', short:'Pantry', name:'Staff Pantry', gx:2, gy:10, gw:8, gh:9, z:0, floor:'#fff7f1', grid:'#f8e0d0', wall:COL.peach, shell:true },
+    { id:'P-110', short:'Kitchen', name:'Mini Kitchen & Refreshments', gx:2, gy:10, gw:8, gh:5, z:0, floor:'#fff7f1', grid:'#f8e0d0', wall:COL.peach, shell:true },
+    { id:'M-130', short:'Meeting', name:'Staff Meeting Room', gx:2, gy:15, gw:8, gh:4.4, z:0, floor:'#f3f9ff', grid:'#d6ebff', wall:COL.sky, shell:true },
     { id:'T-300', short:'Treatment', name:'Treatment Suites', gx:23, gy:19, gw:12, gh:9, z:0, floor:'#f7f4ff', grid:'#e4dcfa', wall:COL.lav, shell:true },
     { id:'T-301', short:'T-301', name:'Treatment bay T-301', gx:23.4, gy:19.5, gw:5.5, gh:4, z:0, shell:false, label:true },
     { id:'T-302', short:'T-302', name:'Treatment bay T-302', gx:29.2, gy:19.5, gw:5.5, gh:4, z:0, shell:false, label:true },
     { id:'T-303', short:'T-303', name:'Treatment bay T-303', gx:23.4, gy:23.8, gw:5.5, gh:4, z:0, shell:false, label:true },
     { id:'T-304', short:'T-304', name:'Treatment bay T-304', gx:29.2, gy:23.8, gw:5.5, gh:4, z:0, shell:false, label:true },
     { id:'S-120', short:'Sterile', name:'Sterilisation & Equipment', gx:11, gy:21, gw:11, gh:7, z:0, floor:'#f3f9ff', grid:'#d6ebff', wall:COL.sky, shell:true },
-    { id:'L-105', short:'Lounge', name:'Patient Lounge', gx:28, gy:11, gw:7, gh:7, z:0, floor:'#fff5f7', grid:'#f8d0da', wall:COL.rose, shell:true },
+    { id:'L-105', short:'Waiting', name:'Waiting Lounge', gx:28, gy:11, gw:7, gh:7, z:0, floor:'#fff5f7', grid:'#f8d0da', wall:COL.rose, shell:true },
     { id:'D-108', short:'Lockers', name:'Changing Rooms', gx:2, gy:20, gw:8, gh:8, z:0, floor:'#f3fbf7', grid:'#d7f3e6', wall:COL.mint, shell:true },
     { id:'B-402', short:'Board', name:'Executive Boardroom', gx:2, gy:1, gw:10, gh:7, z:92, floor:'#f3f9ff', grid:'#d6ebff', wall:COL.sky, shell:true },
     { id:'N-401', short:'Ops', name:'Clinic Operations', gx:12, gy:1, gw:11, gh:7, z:92, floor:'#fff9ee', grid:'#f8e7bf', wall:COL.gold, shell:true }
@@ -397,7 +401,7 @@ Add a prop
       lay:'Ben walks every room: sanitiser, linen, lights, and the fire exit. His home base is the locker room.',
       tech:['Inputs: round checklist','Systems: whole clinic','SLA: full round each hour','Output: closed checklist'],
       quotes:['Sanitiser topped up.','On my round.','Exit sign is lit.'] },
-    { handle:'@trainer_ivy', name:'Ivy Lestari', role:'Aftercare coach', group:'Wellness', roleKey:'wellness', home:[31.4,15.2,0], room:'L-105', uniform:COL.mint, hair:'#14532d', skin:'#f3c7a8', acc:'headband',
+    { handle:'@trainer_ivy', name:'Ivy Lestari', role:'Aftercare coach', group:'Wellness', roleKey:'wellness', home:[29.6,13.8,0], room:'L-105', uniform:COL.mint, hair:'#14532d', skin:'#f3c7a8', acc:'headband',
       lay:'Ivy meets patients in the lounge after treatment and turns the doctor plan into a simple home routine.',
       tech:['Inputs: aftercare card','Systems: lounge L-105','SLA: coach before they leave','Output: 14-day review'],
       quotes:['SPF every two hours outside.','I booked your review.','The lounge is quiet.'] }
@@ -409,7 +413,8 @@ Add a prop
     f2: [12, 4.5, 92, 1.05],
     'R-101': [19, 14.5, 0, 1.15],
     consult: [29.5, 6, 0, 1.25],
-    'P-110': [6, 14.5, 0, 1.3],
+    'P-110': [6, 12.6, 0, 1.55],
+    'M-130': [6, 17, 0, 1.55],
     treat: [29, 23.5, 0, 1.15],
     'S-120': [16.5, 24.5, 0, 1.3],
     'L-105': [31.5, 14.5, 0, 1.45],
@@ -425,12 +430,13 @@ Add a prop
   };
 
   const BREAKS = [
-    { x:6.2, y:15.2, z:0, say:'Coffee at P-110~' },
+    { x:6.2, y:12.8, z:0, say:'Coffee at the kitchen~' },
+    { x:9.0, y:17.0, z:0, say:'Team huddle~' },
     { x:32.2, y:16.2, z:0, say:'Quick break~' },
     { x:20.2, y:5.8, z:92, say:'Heading up to the Sky Lounge~' },
     { x:27.2, y:7.2, z:0, say:'Sync with dr. Yeyen~' }
   ];
-  const PATROL = [[18,16,0],[26,22,0],[16,24,0],[6,15,0],[4.6,23.4,0]];
+  const PATROL = [[18,16,0],[26,22,0],[16,24,0],[6,12.8,0],[31,15.6,0],[4.6,23.4,0]];
   const TV_MENU = ['Acne care','Melasma','HIFU','Laser','Barrier','SPF 50+'];
   const PATIENT_LINES = ['Good.', 'Best treatment.', 'My acne healed.', 'So gentle.', 'Thank you, doctor.', 'My skin is calmer.', 'Worth the visit.', 'I feel brighter.'];
   const STAFF_LINES = {
@@ -500,10 +506,15 @@ Add a prop
   function addBox(gx, gy, gw, gh, h, top, z, left, right) {
     add({ type:'box', gx, gy, gw, gh, h, z: z || 0, top, left: left || shade(top, -18), right: right || shade(top, -32), stroke:'rgba(148,163,184,.45)' });
   }
+  let planterN = 0;
   function planter(gx, gy, z) {
-    addBox(gx, gy, 0.55, 0.55, 3.2, '#f8fafc', z);
-    add({ type:'foliage', gx: gx + 0.27, gy: gy + 0.27, z: (z || 0) + 3.2 });
+    // Only a few slim snake plants remain; the rest of the decor is clinical equipment.
+    if (planterN++ % 4 !== 0) return;
+    addBox(gx, gy, 0.5, 0.5, 3.2, '#f8fafc', z);
+    add({ type:'foliage', gx: gx + 0.25, gy: gy + 0.25, z: (z || 0) + 3.2 });
   }
+  function device(kind, gx, gy, z, label) { add({ type:'device', kind, gx, gy, z: z || 0, label: label || '' }); }
+  function bigTV(gx, gy, z, tiles, title) { add({ type:'bigtv', gx, gy, z, tiles, title }); }
   function pendant(gx, gy, z) { add({ type:'pendant', gx, gy, z }); }
   function chair(gx, gy, z, accent, flip) {
     add({ type:'chair', gx, gy, z: z || 0, accent: accent || COL.sage, flip: !!flip });
@@ -529,7 +540,7 @@ Add a prop
   function whiteboard(gx, gy, z) { add({ type:'board', gx, gy, z }); }
   function glassPartition(gx, gy0, gy1, z) { add({ type:'glass', gx, gy0, gy1, z: z || 0 }); }
   function autoclave(gx, gy, z, i) { add({ type:'clave', gx, gy, z: z || 0, i }); }
-  function laserTower(gx, gy, z, id) { add({ type:'laser', id, gx, gy, z: z || 0, hx: gx, hy: gy }); }
+  function laserTower(gx, gy, z, id) { add({ type:'laser', id, gx, gy, z: z || 0, hx: gx, hy: gy, label: id === 'kai' ? 'Mobile laser' : 'Q-switch laser' }); }
   function treatmentBed(gx, gy, z) {
     const zz = z || 0;
     addBox(gx - 0.06, gy - 0.06, 1.85, 0.86, 1.1, '#ddd6c9', zz, '#cfc8b8', '#bfb7a4');
@@ -566,7 +577,7 @@ Add a prop
     sofa(19.2, 16.3, 2.2, COL.sky, '#fff', 0, false);
     addBox(15.2, 15.3, 0.7, 0.7, 2.4, '#ffffff', 0);
     addBox(18.2, 15.3, 0.7, 0.7, 2.4, '#ffffff', 0);
-    wallTV(20.4, 10.45, 16);
+    bigTV(19.9, 10.35, 12, 2.6, 'Welcome to SKINDERMA');
     add({ type:'queue', gx: 12.4, gy: 10.45, z: 18 });
     add({ type:'clock', gx: 17.2, gy: 10.4, z: 22 });
     add({ type:'logo', gx: 15.2, gy: 10.35, z: 24 });
@@ -592,27 +603,15 @@ Add a prop
     pendant(26.2, 4.2, 0); pendant(32.2, 4.2, 0);
     sanitiser(24.4, 9.2, 0); sanitiser(33.6, 9.2, 0);
 
-    addBox(2.5, 11.2, 3.2, 0.7, 7, '#ffffff', 0);
-    addBox(2.6, 12.2, 0.5, 0.5, 8, '#e0f2fe', 0, '#cbd5e1', COL.mint);
-    addBox(3.3, 12.1, 0.7, 0.55, 5, '#f8fafc', 0);
-    addBox(5.4, 11.3, 1.6, 0.6, 9, '#ffffff', 0, '#e2e8f0', COL.sky);
-    addBox(4.2, 13.6, 5.6, 0.8, 6.5, '#ffffff', 0);
-    for (let i = 0; i < 5; i++) chair(4.5 + i, 14.55, 0, [COL.blush, COL.mint, COL.sky, COL.gold, COL.lav][i], false);
-    addBox(3.2, 16.1, 4.4, 1.15, 6, '#ffffff', 0);
-    for (let i = 0; i < 4; i++) { chair(3.4 + i, 15.85, 0, COL.sage, true); chair(3.4 + i, 17.35, 0, COL.blush, false); }
-    addBox(7.3, 11.4, 0.7, 0.6, 10, '#ffffff', 0, '#e2e8f0', COL.sky);
-    addBox(2.6, 17.4, 2.2, 0.4, 6, '#ffffff', 0);
-    for (let i = 0; i < 3; i++) chair(3 + i * 0.7, 17.9, 0, COL.gold, false);
-    for (let i = 0; i < 6; i++) pendant(3.2 + (i % 3) * 1.8, 12.8 + Math.floor(i / 3) * 3.2, 0);
-    planter(8.4, 17.4, 0);
-    sanitiser(8.6, 18.2, 0);
+    kitchenAndMeeting();
+    pendant(4.2, 12.6, 0); pendant(7.2, 12.6, 0); pendant(4.6, 17.2, 0); pendant(7.4, 17.2, 0);
 
     const bays = [[24.2,20.4],[30.2,20.4],[24.2,24.4],[30.2,24.4]];
     bays.forEach(([x, y], i) => {
       treatmentBed(x, y, 0);
       addBox(x + 1.8, y + 0.1, 0.45, 0.7, 4, '#ffffff', 0);
       chair(x + 1.15, y + 1.15, 0, COL.lav, false);
-      if (i !== 3) laserTower(x + 2.3, y + 0.3, 0, 'bay' + i);
+      if (i === 0) laserTower(x + 2.3, y + 0.3, 0, 'bay' + i);
       pendant(x + 1, y + 0.4, 0);
     });
     laserTower(31.2, 25.2, 0, 'kai');
@@ -637,19 +636,8 @@ Add a prop
     sanitiser(20.6, 26.6, 0);
     planter(20.4, 26.2, 0);
 
-    wallTV(30.2, 11.3, 14);
-    sofa(29.2, 14.4, 2.6, COL.blush, '#fff', 0, true);
-    addBox(30.2, 13.5, 0.9, 0.7, 2.6, '#ffffff', 0);
-    addBox(33.2, 12.2, 0.8, 0.6, 7, COL.sky, 0);
-    addBox(34.2, 12.2, 0.8, 0.6, 7, COL.gold, 0);
-    add({ type:'play', gx: 33.4, gy: 12.35, z: 8, seed: 1 });
-    add({ type:'play', gx: 34.4, gy: 12.35, z: 8, seed: 2 });
-    addBox(32.6, 15.8, 1.3, 0.8, 4, '#ffffff', 0, COL.mint, COL.gold);
-    addBox(29.4, 16.4, 0.7, 0.7, 2.2, COL.lav, 0);
-    addBox(31.2, 16.5, 0.7, 0.7, 2.2, COL.sky, 0);
-    addBox(34.2, 15.2, 0.45, 1.4, 6, '#ffffff', 0);
+    waitingLounge();
     pendant(31, 13.2, 0); pendant(33.5, 15, 0);
-    planter(34.6, 16.6, 0);
 
     for (let i = 0; i < 6; i++) addBox(2.5 + (i % 3) * 0.7, 20.6 + Math.floor(i / 3) * 0.7, 0.55, 0.5, 8, [COL.mint, COL.blush, COL.sky, COL.gold, COL.lav, '#fff'][i], 0);
     addBox(2.6, 22.6, 2.2, 0.45, 3, '#ffffff', 0);
@@ -701,8 +689,9 @@ Add a prop
     rug(24.5, 3.2, 4.2, 5.2, '#e7f6ef');
     rug(30.4, 3.2, 4.2, 5.2, '#e7f6ef');
     rug(23.8, 20.0, 9.6, 7.2, '#f3eefe');
-    rug(3.0, 14.8, 6.2, 3.4, '#fff4ea');
-    rug(29.0, 13.6, 4.6, 3.2, '#fdecef');
+    rug(3.0, 10.8, 6.6, 3.9, '#fbf1e6');
+    rug(3.2, 15.6, 6.4, 3.2, '#e8f1fb');
+    rug(28.6, 12.8, 6.0, 4.6, '#f3ece1');
 
     sofa(12.2, 17.5, 2.1, '#ffffff', COL.blush, 0, false);
     sofa(21.2, 16.6, 1.8, COL.sky, '#ffffff', 0, false);
@@ -719,14 +708,6 @@ Add a prop
     chair(31.8, 6.4, 0, COL.mint, false);
     planter(28.6, 8.2, 0); planter(34.2, 8.2, 0);
 
-    sofa(15.2, 4.4, 2.4, COL.blush, '#ffffff', 0, false);
-    sofa(18.4, 4.6, 2.2, '#ffffff', COL.sage, 0, false);
-    addBox(17.2, 6.0, 0.8, 0.55, 2.2, '#ffffff', 0);
-    planter(14.2, 6.6, 0); planter(21.2, 5.4, 0); planter(13.2, 3.4, 0);
-    for (let i = 0; i < 3; i++) chair(4.2 + i * 0.85, 4.2, 0, [COL.blush, COL.mint, COL.gold][i], false);
-    addBox(4.2, 5.4, 2.2, 0.7, 2.4, '#ffffff', 0);
-    planter(7.4, 3.6, 0); planter(8.6, 7.2, 0);
-
     [[24.6, 22.6], [30.6, 22.6], [24.6, 26.4], [30.6, 26.4]].forEach(([x, y]) => {
       addBox(x, y, 0.42, 0.55, 3.2, '#ffffff', 0);
       addBox(x + 1.55, y - 0.15, 0.28, 0.28, 6.5, '#f8fafc', 0, '#e2e8f0', COL.sky);
@@ -741,13 +722,8 @@ Add a prop
     addBox(17.4, 26.2, 0.8, 0.45, 4, '#f8fafc', 0);
     planter(11.5, 24.2, 0);
 
-    addBox(2.6, 13.4, 0.45, 1.6, 6, '#ffffff', 0);
-    planter(8.8, 11.6, 0); planter(2.6, 15.6, 0);
     addBox(6.2, 22.2, 0.4, 0.8, 4, '#ffffff', 0);
     planter(3.4, 25.6, 0);
-
-    planter(28.4, 16.8, 0); planter(34.8, 14.2, 0);
-    addBox(28.5, 12.6, 0.4, 1.1, 5, '#ffffff', 0);
 
     [[10.5, 8.6], [10.5, 19.4], [22.4, 9.4], [27.4, 18.8], [21.6, 20.2], [9.2, 9.2]].forEach(([x, y]) => planter(x, y, 0));
     pendant(16.2, 5.2, 0); pendant(6.2, 5.2, 0); pendant(26.4, 16.2, 0);
@@ -760,14 +736,11 @@ Add a prop
     add({ type:'art', gx: 31.4, gy: 2.32, z: 16, c1: '#fdecef', c2: '#7ED3B2' });
     add({ type:'art', gx: 29.6, gy: 11.32, z: 16, c1: '#dcefe6', c2: '#B8A1F2' });
     add({ type:'art', gx: 3.4, gy: 1.32, z: 108, c1: '#e0f2fe', c2: '#5FB382' });
-    for (let i = 0; i < 3; i++) addBox(12.9 + i * 0.55, 18.35, 0.3, 0.3, 1.1 + (i % 2) * 0.5, '#7c3aed', 0);
     addBox(22.9, 13.2, 1.1, 0.5, 9, '#fff7ed', 0, '#f3e2c7', '#e5cba0');
     for (let i = 0; i < 4; i++) addBox(23.0 + i * 0.24, 13.3, 0.16, 0.3, 1.4 + (i % 2), ['#F4A7B9', '#F2C14E', '#7ED3B2', '#ffffff'][i], 9);
     addBox(20.6, 18.6, 0.5, 0.5, 7, '#ffffff', 0, '#e2e8f0', COL.sky);
     addBox(20.65, 18.65, 0.4, 0.4, 2.2, '#e0f2fe', 7);
     addBox(12.6, 18.6, 0.45, 0.45, 6, '#f1f8ff', 0, '#dbeafe', '#bcd6f5');
-    addBox(29.0, 17.3, 0.55, 0.4, 7.5, '#ffffff', 0, '#e2e8f0', COL.mint);
-    addBox(29.05, 17.35, 0.45, 0.3, 2.4, '#e0f2fe', 7.5);
     addBox(33.0, 24.6, 0.5, 0.5, 6, '#fef2f2', 0, '#fecaca', '#f87171');
     addBox(33.05, 24.65, 0.4, 0.4, 1.6, '#ef4444', 6);
     addBox(2.9, 19.0, 0.4, 0.4, 5.5, '#fef9c3', 0, '#fde68a', '#f59e0b');
@@ -786,17 +759,86 @@ Add a prop
     add({ type:'curtain', gx: 29.9, gy: 23.9, gw: 2.6, z: 0, color: '#dcefe6' });
     addBox(11.2, 14.6, 2.6, 0.35, 10, '#ffffff', 0, '#f1ead9', '#e2d9c2');
     addBox(11.25, 14.65, 2.5, 0.25, 1.2, '#3f7d68', 10);
-    addBox(28.2, 18.6, 0.5, 0.3, 3.2, '#1e293b', 0);
-    add({ type:'monitor', gx: 28.3, gy: 18.55, z: 3.4, seed: 9 });
     for (let i = 0; i < 4; i++) addBox(12.2 + i * 3.4, 9.55, 0.12, 0.12, 7, '#94a3b8', 0);
-    addBox(30.0, 16.9, 1.1, 0.45, 2.6, '#fff7ed', 0, '#f3e2c7', '#e5cba0');
-    addBox(30.1, 17.0, 0.3, 0.25, 1.1, '#F4A7B9', 2.6);
-    addBox(30.5, 17.0, 0.3, 0.25, 1.1, '#7ED3B2', 2.6);
-    addBox(4.4, 16.6, 0.9, 0.5, 2.2, '#fff7ed', 0);
     addBox(13.4, 6.6, 1.4, 0.5, 3.4, '#f8fafc', 92, '#e2e8f0', '#cbd5e1');
     addBox(4.6, 6.7, 0.4, 0.3, 4.5, '#fee2e2', 92, '#fecaca', '#ef4444');
+    medicalDevices();
   }
 
+  function kitchenAndMeeting() {
+    const wood = '#f6efe0', woodL = '#e8dfc9', woodR = '#d8ccb0';
+    // Mini kitchen and refreshments
+    addBox(3.4, 10.3, 4.5, 0.75, 6, wood, 0, woodL, woodR);
+    addBox(3.35, 10.25, 4.6, 0.85, 0.7, '#ffffff', 6, '#e9e4d8', '#d6cfbf');
+    device('coffee', 3.7, 10.5, 6.7);
+    device('fruit', 4.9, 10.5, 6.7);
+    device('snacks', 5.9, 10.55, 6.7);
+    addBox(6.9, 10.5, 0.62, 0.45, 2.6, '#475569', 6.7, '#334155', '#1e293b');
+    addBox(5.6, 10.2, 2.4, 0.36, 4, wood, 13, woodL, woodR);
+    device('fridge', 8.3, 10.3, 0);
+    addBox(2.45, 11.7, 0.45, 0.45, 10, '#f8fafc', 0, '#e2e8f0', COL.sky);
+    addBox(2.5, 11.75, 0.35, 0.35, 3.5, '#bfe3ff', 10, '#a6d4f7', '#8cc4ee');
+    addBox(4.2, 12.3, 3.4, 1.1, 6, wood, 0, woodL, woodR);
+    addBox(4.1, 12.2, 3.6, 1.3, 0.7, '#ffffff', 6, '#e9e4d8', '#d6cfbf');
+    device('fruit', 4.6, 12.4, 6.7);
+    device('snacks', 5.7, 12.55, 6.7);
+    addBox(6.6, 12.55, 0.4, 0.3, 0.9, '#ffffff', 6.7);
+    [4.4, 5.5, 6.6].forEach((sx, i) => chair(sx, 13.75, 0, [COL.sage, COL.blush, COL.sky][i], false));
+    device('vend', 8.7, 12.6, 0);
+    addBox(2.4, 13.0, 0.5, 1.4, 5, wood, 0, woodL, woodR);
+    device('snacks', 2.5, 13.3, 5.7);
+    sanitiser(9.3, 14.2, 0);
+    // Staff meeting room
+    bigTV(5.4, 15.05, 8, 2.8, 'Agenda');
+    add({ type:'board', gx: 8.7, gy: 15.1, z: 12 });
+    addBox(3.4, 16.7, 5.0, 1.4, 6.2, '#f6efe0', 0, '#e8dfc9', '#d8ccb0');
+    addBox(5.7, 17.15, 0.45, 0.45, 0.7, '#334155', 6.2, '#1e293b', '#0f172a');
+    add({ type:'laptop', gx: 3.9, gy: 17.0, z: 6.3 });
+    add({ type:'laptop', gx: 7.1, gy: 17.0, z: 6.3 });
+    [3.8, 4.9, 6.0, 7.1].forEach((cx, i) => { chair(cx, 16.1, 0, i % 2 ? COL.sky : '#dfe9e3', true); chair(cx, 18.25, 0, i % 2 ? '#dfe9e3' : COL.sky, false); });
+    chair(2.85, 17.0, 0, COL.sage, false);
+    chair(8.75, 17.0, 0, COL.sage, true);
+    addBox(9.0, 16.0, 0.7, 2.6, 5, wood, 0, woodL, woodR);
+    device('coffee', 9.05, 16.4, 5.7);
+    addBox(2.4, 16.0, 0.5, 2.2, 10, wood, 0, woodL, woodR);
+    for (let i = 0; i < 4; i++) addBox(2.45, 16.1 + i * 0.5, 0.4, 0.34, 1.4, ['#8EC5FF', '#F4A7B9', '#7ED3B2', '#F2C14E'][i], 10);
+    sanitiser(9.3, 18.7, 0);
+  }
+  function waitingLounge() {
+    const wood = '#f6efe0', woodL = '#e8dfc9', woodR = '#d8ccb0';
+    bigTV(31.6, 11.05, 8, 3.1, 'SKINDERMA TV');
+    addBox(31.3, 11.2, 3.4, 0.55, 5, wood, 0, woodL, woodR);
+    addBox(32.4, 11.35, 1.4, 0.18, 0.9, '#1e293b', 5);
+    sofa(29.0, 15.4, 2.6, '#e3ede7', '#cfdcd3', 0, false);
+    sofa(32.0, 15.4, 2.6, '#e3ede7', '#cfdcd3', 0, false);
+    chair(29.1, 13.1, 0, '#cfdcd3', false);
+    chair(34.0, 13.1, 0, '#cfdcd3', false);
+    addBox(30.6, 13.6, 2.6, 0.9, 2.6, wood, 0, woodL, woodR);
+    addBox(31.0, 13.85, 0.5, 0.35, 0.5, '#ffffff', 2.6);
+    addBox(31.7, 13.85, 0.5, 0.35, 0.5, '#F4A7B9', 2.6);
+    device('snacks', 32.3, 13.85, 2.6);
+    addBox(28.5, 14.6, 0.6, 0.6, 3, wood, 0, woodL, woodR);
+    addBox(28.7, 14.8, 0.2, 0.2, 4.5, '#fef3c7', 3);
+    addBox(34.3, 14.0, 0.4, 1.2, 5, wood, 0, woodL, woodR);
+    for (let i = 0; i < 3; i++) addBox(34.35, 14.1 + i * 0.35, 0.3, 0.28, 1.1, ['#F4A7B9', '#8EC5FF', '#F2C14E'][i], 5);
+    addBox(34.0, 16.4, 0.7, 1.1, 5, wood, 0, woodL, woodR);
+    device('coffee', 34.05, 16.6, 5.7);
+    addBox(33.2, 16.9, 0.4, 0.4, 9, '#f8fafc', 0, '#e2e8f0', COL.sky);
+    addBox(33.25, 16.95, 0.3, 0.3, 3, '#bfe3ff', 9, '#a6d4f7', '#8cc4ee');
+  }
+  function medicalDevices() {
+    [[23.7, 20.7], [29.7, 20.7], [23.7, 24.7], [29.7, 24.7]].forEach(([x, y]) => device('lamp', x, y, 0));
+    device('hifu', 32.5, 20.6, 0, 'HIFU');
+    device('hydra', 26.5, 24.6, 0, 'HydraFacial');
+    device('steamer', 23.9, 25.6, 0);
+    device('led', 29.55, 24.3, 0, 'LED therapy');
+    device('visia', 33.4, 3.5, 0, 'Skin analyser');
+    device('derma', 28.8, 5.5, 0, 'Dermatoscope');
+    device('cleaner', 15.3, 23.35, 6, 'Ultrasonic');
+    device('uv', 19.6, 21.7, 0, 'UV cabinet');
+    device('kiosk', 21.7, 12.4, 0, 'Check-in kiosk');
+    device('crash', 22.0, 18.1, 0, 'Crash cart');
+  }
   function stairCell(x, y) { return x >= 11 && x <= 12 && y >= 6 && y <= 8; }
   function walkable(x, y, z) {
     if (DOORS.some((d) => d[0] === x && d[1] === y) && z === 0) return true;
@@ -963,7 +1005,8 @@ Add a prop
     g.gx = 18; g.gy = 18.4; g.z = 0;
     const bay = BAYS[n % BAYS.length];
     g.script = [
-      { x: 16.2, y: 16.6, z: 0, hold: 6, say: 'Good.' },
+      { x: 16.2, y: 16.6, z: 0, hold: 5, say: 'Good.' },
+      { x: 30.4, y: 15.7, z: 0, hold: 7, say: 'Very relaxing.' },
       { x: 27.2, y: 7.4, z: 0, hold: 7, say: 'Thank you, doctor.' },
       { x: bay.x, y: bay.y, z: 0, hold: 14, say: 'Best treatment.', recline: true },
       { x: 18.2, y: 18.5, z: 0, hold: 0.2, say: 'My acne healed.', remove: true }
@@ -1063,13 +1106,20 @@ Add a prop
     if (p.type === 'box') { box(p.gx, p.gy, p.gw, p.gh, p.h, p.top, p.left, p.right, p.stroke, p.z); return; }
     if (p.type === 'chair') { drawChair(p); return; }
     if (p.type === 'foliage') {
-      const o = iso(p.gx, p.gy, p.z);
-      ctx.fillStyle = '#5FB382';
-      ctx.beginPath(); ctx.arc(o.x, o.y, 11 * view.zoom, 0, 7); ctx.fill();
-      ctx.fillStyle = '#7ED3B2';
-      ctx.beginPath(); ctx.arc(o.x - 4 * view.zoom, o.y + 2 * view.zoom, 7 * view.zoom, 0, 7); ctx.fill();
+      const o = iso(p.gx, p.gy, p.z), z = view.zoom;
+      const blades = [[-5, -15, '#4f8a6d'], [-2, -21, '#5f9d7d'], [1, -24, '#4f8a6d'], [4, -18, '#6faa8a'], [7, -13, '#5f9d7d']];
+      blades.forEach(([dx, dy, c]) => {
+        ctx.fillStyle = c;
+        ctx.beginPath();
+        ctx.moveTo(o.x + (dx > 0 ? 1 : -1) * z, o.y);
+        ctx.quadraticCurveTo(o.x + dx * z * 1.2, o.y + dy * z * 0.5, o.x + dx * z, o.y + dy * z);
+        ctx.quadraticCurveTo(o.x + dx * z * 0.6 + 2 * z, o.y + dy * z * 0.4, o.x + 1.4 * z, o.y);
+        ctx.closePath(); ctx.fill();
+      });
       return;
     }
+    if (p.type === 'device') { drawDevice(p, t); return; }
+    if (p.type === 'bigtv') { drawBigTV(p, t); return; }
     if (p.type === 'pendant') {
       const o = iso(p.gx, p.gy, (p.z || 0) + 34);
       ctx.strokeStyle = '#cbd5e1'; ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(o.x, o.y + 18 * view.zoom); ctx.stroke();
@@ -1135,6 +1185,7 @@ Add a prop
       ctx.strokeStyle = '#94a3b8'; ctx.beginPath();
       const arm = iso(x + 0.8, y - 0.2, p.z + 8);
       ctx.moveTo(o.x, o.y); ctx.lineTo(arm.x, arm.y); ctx.stroke();
+      deviceChip({ label: p.label, gx: x, gy: y, z: p.z }, 17);
       return;
     }
     if (p.type === 'videowall') {
@@ -1169,6 +1220,173 @@ Add a prop
     if (p.type === 'stairs') {
       for (let i = 0; i < 8; i++) box(10.7, 6.0 + i * 0.35, 1.5, 0.32, 1 + i * 1.2, '#ffffff', '#e2e8f0', '#cbd5e1', null, i * 11);
       return;
+    }
+  }
+  function miniScreen(gx, gy, z, w, h, seed, tint) {
+    const zm = view.zoom, o = iso(gx, gy, z);
+    ctx.fillStyle = '#1e293b'; round(o.x, o.y - h * zm, (w + 3) * zm, (h + 3) * zm, 2);
+    ctx.fillStyle = tint || '#dff3ea'; ctx.fillRect(o.x + 1.5 * zm, o.y - (h - 1.5) * zm, w * zm, h * zm);
+    ctx.fillStyle = '#3f7d68';
+    ctx.fillRect(o.x + 2.5 * zm, o.y - (h - 3) * zm, (2 + (Math.sin(simT * 1.4 + seed) + 1) * (w - 6) / 2) * zm, 1.8 * zm);
+    ctx.fillStyle = '#E85D75';
+    ctx.fillRect(o.x + 2.5 * zm, o.y - (h - 6.5) * zm, (2 + (Math.cos(simT * 1.1 + seed) + 1) * (w - 6) / 2.4) * zm, 1.8 * zm);
+  }
+  function deviceChip(p, lift) {
+    if (!p.label || view.zoom < 1.05) return;
+    const o = iso(p.gx + 0.2, p.gy + 0.2, (p.z || 0) + lift);
+    ctx.font = '700 9.5px sans-serif';
+    const w = ctx.measureText(p.label).width + 10;
+    ctx.fillStyle = 'rgba(255,253,248,.96)'; ctx.strokeStyle = '#d9d2c2'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(o.x - w / 2, o.y - 14, w, 13, 6); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#3f4a3c'; ctx.fillText(p.label, o.x - w / 2 + 5, o.y - 4.4);
+  }
+  function drawDevice(p, t) {
+    const x = p.gx, y = p.gy, z = p.z || 0, zm = view.zoom, k = p.kind;
+    const W1 = '#f8fafc', L1 = '#e2e8f0', R1 = '#cbd5e1';
+    let lift = 14;
+    if (k === 'laser') {
+      box(x, y, 0.5, 0.5, 8, W1, L1, R1, null, z);
+      box(x + 0.04, y + 0.04, 0.42, 0.42, 0.6, '#0ea5e9', '#0284c7', '#0369a1', null, z + 8);
+      miniScreen(x + 0.1, y + 0.02, z + 12, 11, 7, 1);
+      const a = iso(x + 0.25, y + 0.25, z + 9), b = iso(x + 0.95, y + 0.85, z + 6);
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = Math.max(1, 1.4 * zm);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo((a.x + b.x) / 2, a.y - 4 * zm); ctx.lineTo(b.x, b.y); ctx.stroke();
+      ctx.fillStyle = (Math.floor(t * 2) % 2) ? '#E85D75' : '#fca5a5';
+      ctx.beginPath(); ctx.arc(b.x, b.y, 2 * zm, 0, 7); ctx.fill();
+      lift = 18;
+    } else if (k === 'hifu') {
+      box(x, y, 0.62, 0.55, 9, W1, L1, R1, null, z);
+      box(x + 0.05, y + 0.05, 0.52, 0.45, 0.5, '#3f7d68', '#356b58', '#2c5848', null, z + 9);
+      miniScreen(x + 0.08, y + 0.02, z + 13, 14, 8, 2);
+      box(x + 0.7, y + 0.1, 0.18, 0.3, 4, '#475569', '#334155', '#1e293b', null, z + 3);
+      const a = iso(x + 0.7, y + 0.25, z + 6), b = iso(x + 0.3, y + 0.5, z + 8);
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = Math.max(1, 1.2 * zm);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(a.x - 6 * zm, a.y + 8 * zm, b.x, b.y); ctx.stroke();
+      lift = 19;
+    } else if (k === 'hydra') {
+      box(x, y, 0.62, 0.55, 8, W1, L1, R1, null, z);
+      ['#8EC5FF', '#7ED3B2', '#F4A7B9'].forEach((c, i) => box(x + 0.07 + i * 0.17, y + 0.1, 0.12, 0.12, 2.6, c, shade(c, -14), shade(c, -28), null, z + 8));
+      miniScreen(x + 0.08, y + 0.02, z + 6, 12, 7, 3);
+      const a = iso(x + 0.3, y + 0.35, z + 8), b = iso(x + 0.95, y + 0.95, z + 3);
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = Math.max(1, 1.3 * zm);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(a.x + 8 * zm, a.y + 10 * zm, b.x, b.y); ctx.stroke();
+      lift = 16;
+    } else if (k === 'led') {
+      box(x, y, 0.1, 0.1, 17, R1, '#b6c2cf', '#9fb0bf', null, z);
+      box(x - 0.15, y - 0.2, 1.7, 0.16, 5, '#fdecef', '#f8d3dc', '#f1b6c6', null, z + 15);
+      const g = 0.10 + 0.05 * Math.sin(t * 1.3);
+      ctx.fillStyle = 'rgba(244,114,182,' + g + ')';
+      ctx.beginPath();
+      const q = [iso(x - 0.1, y - 0.1, z + 3.4), iso(x + 1.5, y - 0.1, z + 3.4), iso(x + 1.5, y + 0.7, z + 3.4), iso(x - 0.1, y + 0.7, z + 3.4)];
+      ctx.moveTo(q[0].x, q[0].y); q.slice(1).forEach((pt) => ctx.lineTo(pt.x, pt.y)); ctx.closePath(); ctx.fill();
+      lift = 24;
+    } else if (k === 'visia') {
+      box(x, y, 1.0, 0.8, 9, W1, L1, R1, null, z);
+      box(x + 0.1, y + 0.05, 0.8, 0.6, 3.4, '#243044', '#1e293b', '#334155', null, z + 9);
+      const o = iso(x + 0.5, y + 0.4, z + 12.6);
+      ctx.fillStyle = 'rgba(142,197,255,' + (0.35 + 0.2 * Math.sin(t * 2)) + ')';
+      ctx.beginPath(); ctx.ellipse(o.x, o.y, 8 * zm, 3.4 * zm, 0, 0, 7); ctx.fill();
+      box(x + 0.3, y + 0.7, 0.4, 0.2, 2.2, '#cbd5e1', '#b6c2cf', '#9fb0bf', null, z + 4);
+      lift = 20;
+    } else if (k === 'lamp') {
+      box(x - 0.1, y - 0.1, 0.34, 0.34, 0.8, '#94a3b8', '#7b8aa0', '#64748b', null, z);
+      box(x + 0.03, y + 0.03, 0.07, 0.07, 13, '#cbd5e1', '#b6c2cf', '#9fb0bf', null, z + 0.8);
+      const o = iso(x + 0.06, y + 0.06, z + 14.5);
+      ctx.fillStyle = 'rgba(224,242,254,.85)'; ctx.strokeStyle = '#64748b'; ctx.lineWidth = Math.max(1, 1.4 * zm);
+      ctx.beginPath(); ctx.ellipse(o.x, o.y, 7 * zm, 5 * zm, -0.3, 0, 7); ctx.fill(); ctx.stroke();
+      lift = 22;
+    } else if (k === 'steamer') {
+      box(x, y, 0.34, 0.34, 6, W1, L1, R1, null, z);
+      box(x + 0.04, y + 0.04, 0.26, 0.26, 1.2, '#8EC5FF', '#74b2ee', '#5f9fe0', null, z + 6);
+      const o = iso(x + 0.17, y + 0.17, z + 8);
+      for (let i = 0; i < 3; i++) {
+        const ph = (t * 0.6 + i / 3) % 1;
+        ctx.fillStyle = 'rgba(255,255,255,' + (0.55 * (1 - ph)) + ')';
+        ctx.beginPath(); ctx.ellipse(o.x + Math.sin(ph * 6 + i) * 3 * zm, o.y - ph * 14 * zm, (3 + ph * 3) * zm, (2 + ph * 2) * zm, 0, 0, 7); ctx.fill();
+      }
+      lift = 18;
+    } else if (k === 'cleaner') {
+      box(x, y, 0.9, 0.5, 2.6, L1, '#d3dbe5', '#b6c2cf', null, z);
+      box(x + 0.06, y + 0.06, 0.5, 0.38, 0.7, '#9fd9c4', '#86ccb2', '#6cbd9f', null, z + 2.6);
+      miniScreen(x + 0.62, y + 0.1, z + 4.6, 6, 4, 4);
+      lift = 10;
+    } else if (k === 'uv') {
+      box(x, y, 0.62, 0.52, 11, W1, L1, R1, null, z);
+      box(x + 0.06, y + 0.5, 0.5, 0.05, 8, 'rgba(196,181,253,.7)', '#ddd6fe', '#c4b5fd', null, z + 1.4);
+      const g = 0.45 + 0.25 * Math.sin(t * 2.2);
+      const o = iso(x + 0.31, y + 0.52, z + 7);
+      ctx.fillStyle = 'rgba(167,139,250,' + g + ')'; ctx.fillRect(o.x - 3 * zm, o.y - 5 * zm, 6 * zm, 10 * zm);
+      lift = 20;
+    } else if (k === 'crash') {
+      box(x, y, 0.62, 0.5, 6.5, '#fef2f2', '#fecaca', '#ef4444', null, z);
+      box(x + 0.08, y + 0.08, 0.3, 0.3, 1.8, '#1e293b', '#0f172a', '#334155', null, z + 6.5);
+      const o = iso(x + 0.22, y + 0.24, z + 8.6);
+      ctx.fillStyle = '#ef4444'; ctx.fillRect(o.x - 1 * zm, o.y - 3 * zm, 2 * zm, 6 * zm); ctx.fillRect(o.x - 3 * zm, o.y - 1 * zm, 6 * zm, 2 * zm);
+      lift = 14;
+    } else if (k === 'derma') {
+      box(x, y, 0.5, 0.42, 7, W1, L1, R1, null, z);
+      miniScreen(x + 0.06, y + 0.02, z + 11, 10, 7, 5);
+      box(x + 0.55, y + 0.1, 0.08, 0.2, 2, '#334155', '#1e293b', '#0f172a', null, z + 5);
+      lift = 17;
+    } else if (k === 'kiosk') {
+      box(x, y, 0.36, 0.3, 8, W1, L1, R1, null, z);
+      miniScreen(x + 0.02, y + 0.02, z + 13, 10, 7, 6);
+      lift = 18;
+    } else if (k === 'coffee') {
+      box(x, y, 0.55, 0.4, 3.2, '#334155', '#1e293b', '#0f172a', null, z);
+      box(x + 0.08, y + 0.05, 0.12, 0.12, 0.6, '#ffffff', '#e2e8f0', '#cbd5e1', null, z + 0.2);
+      const o = iso(x + 0.45, y + 0.12, z + 2.4);
+      ctx.fillStyle = (Math.floor(t) % 2) ? '#E85D75' : '#7ED3B2'; ctx.beginPath(); ctx.arc(o.x, o.y, 1.4 * zm, 0, 7); ctx.fill();
+      lift = 8;
+    } else if (k === 'fruit') {
+      const o = iso(x + 0.3, y + 0.3, z + 1);
+      ctx.fillStyle = '#e8e2d3'; ctx.beginPath(); ctx.ellipse(o.x, o.y, 8 * zm, 3.4 * zm, 0, 0, 7); ctx.fill();
+      [['#f59e0b', -4, -2], ['#ef4444', 0, -3.4], ['#fcd34d', 4, -2], ['#fb923c', 1, -0.6]].forEach(([c, dx, dy]) => {
+        ctx.fillStyle = c; ctx.beginPath(); ctx.arc(o.x + dx * zm, o.y + dy * zm, 2.6 * zm, 0, 7); ctx.fill();
+      });
+      lift = 8;
+    } else if (k === 'snacks') {
+      const cols = ['#F4A7B9', '#F2C14E', '#8EC5FF', '#e8d9bd', '#ffffff'];
+      for (let i = 0; i < 5; i++) box(x + i * 0.2, y + (i % 2) * 0.1, 0.16, 0.2, 1.4 + (i % 3) * 0.4, cols[i], shade(cols[i], -14), shade(cols[i], -28), null, z);
+      lift = 8;
+    } else if (k === 'vend') {
+      box(x, y, 0.9, 0.7, 12, W1, L1, R1, null, z);
+      box(x + 0.08, y + 0.64, 0.7, 0.06, 8, '#243044', '#1e293b', '#334155', null, z + 2.5);
+      const cols = ['#F4A7B9', '#F2C14E', '#8EC5FF', '#e8d9bd'];
+      const o = iso(x + 0.1, y + 0.7, z + 10);
+      for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) {
+        ctx.fillStyle = cols[(r + c) % 4]; ctx.fillRect(o.x + c * 4.2 * zm + r * 0.2 * zm, o.y + r * 3.1 * zm + c * 0.5 * zm, 3 * zm, 2.2 * zm);
+      }
+      lift = 20;
+    } else if (k === 'fridge') {
+      box(x, y, 0.9, 0.8, 13, '#eef2f6', '#dde4ec', '#c4cfdb', null, z);
+      box(x + 0.82, y + 0.1, 0.04, 0.04, 5, '#94a3b8', '#7b8aa0', '#64748b', null, z + 4);
+      lift = 22;
+    }
+    deviceChip(p, lift);
+  }
+  function drawBigTV(p, t) {
+    const x = p.gx, y = p.gy + 0.1, z = p.z, tl = p.tiles, zm = view.zoom;
+    box(p.gx, p.gy, tl, 0.12, 15, '#1e293b', '#111827', '#334155', null, z);
+    const a = iso(x + 0.1, y, z + 14), b = iso(x + tl - 0.1, y, z + 14), c = iso(x + tl - 0.1, y, z + 1.6), d = iso(x + 0.1, y, z + 1.6);
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y); ctx.closePath(); ctx.clip();
+    const scene = ((Math.floor(Math.max(0, t) / 6) % 3) + 3) % 3;
+    const bg = [['#e7f6ef', '#bfe5d3'], ['#fdecef', '#f6c7d2'], ['#e0f2fe', '#bcdcf7']][scene];
+    const g = ctx.createLinearGradient(a.x, a.y, c.x, c.y);
+    g.addColorStop(0, bg[0]); g.addColorStop(1, bg[1]);
+    const top = Math.min(a.y, b.y), bottom = Math.max(c.y, d.y);
+    ctx.fillStyle = g; ctx.fillRect(Math.min(a.x, d.x) - 2, top - 2, Math.abs(b.x - a.x) + 6, bottom - top + 4);
+    const cx = (a.x + c.x) / 2, cy = (a.y + c.y) / 2;
+    ctx.fillStyle = 'rgba(255,255,255,.55)';
+    ctx.beginPath(); ctx.ellipse(cx + Math.sin(t * 0.5) * 6 * zm, cy, 12 * zm, 5 * zm, -0.25, 0, 7); ctx.fill();
+    ctx.restore();
+    if (zm >= 0.7) {
+      const label = [p.title, 'Glow facials', 'Sun care tips'][scene];
+      ctx.font = '700 ' + Math.max(8, 9.5 * Math.min(zm, 1.3)) + 'px sans-serif';
+      const tw = ctx.measureText(label).width;
+      ctx.fillStyle = '#2c3a32';
+      ctx.fillText(label, cx - tw / 2, cy + 3.5 * zm);
     }
   }
   function clipText(text, maxW) {
@@ -1529,7 +1747,7 @@ Add a prop
     const run = document.getElementById('runbtn');
     if (run) run.onclick = () => startRun(s);
     const pantry = document.getElementById('pantry');
-    if (pantry) pantry.onclick = () => { s.say = 'Coffee at P-110~'; s.sayUntil = simT + 3; goTo(s, 6.2, 15.2, 0, 'BREAK'); s.breakUntil = simT + 10; log(s, 'Sent to pantry'); };
+    if (pantry) pantry.onclick = () => { s.say = 'Coffee at the kitchen~'; s.sayUntil = simT + 3; goTo(s, 6.2, 12.8, 0, 'BREAK'); s.breakUntil = simT + 10; log(s, 'Sent to pantry'); };
     const callc = document.getElementById('callc');
     if (callc) callc.onclick = () => { goTo(s, 27.2, 7.2, 0, 'BREAK'); s.breakUntil = simT + 10; s.say = 'Called to consultation'; s.sayUntil = simT + 3; log(s, 'Called to C-201'); };
     const hand = document.getElementById('hand');
@@ -1682,14 +1900,15 @@ Add a prop
     'R-101': 'Check in, queue numbers, and a calm sofa wait. Mia and Jun keep arrivals under 4 minutes.',
     'C-201': 'dr. Yeyen and dr. Intan map acne, melasma, and texture here before anything is booked.',
     'C-202': 'dr. Jessica plans energy devices like HIFU with photo mapping first.',
-    'P-110': 'Staff pantry and break corner. Coffee, charts, and a breather between sessions.',
-    'T-300': 'Four private treatment bays with beds, lasers, trolleys, and privacy curtains.',
-    'T-301': 'Treatment bay T-301 — nurse Hana, bed, trolley, and cooling ready.',
-    'T-302': 'Treatment bay T-302 — laser tower with Tomas, test spot logged first.',
-    'T-303': 'Treatment bay T-303 — quiet pigment bay with Priya.',
-    'T-304': 'Treatment bay T-304 — Kai floats the spare laser tower here.',
-    'S-120': 'Sterilisation: autoclave row, UV cabinet, and the chilled serum fridge at 4.2 C.',
-    'L-105': 'Aftercare lounge — Ivy turns the doctor plan into a simple home routine.',
+    'P-110': 'Mini kitchen with coffee, fruit, healthy snacks, a chilled fridge and a snack machine for staff between sessions.',
+    'M-130': 'Staff meeting room with a wall display, agenda board, and a table for daily huddles and case reviews.',
+    'T-300': 'Four private treatment bays with beds, medical-grade devices, trolleys, and privacy curtains.',
+    'T-301': 'Bay T-301 — Q-switch laser for pigment, with nurse Hana, magnifier lamp, and cooling ready.',
+    'T-302': 'Bay T-302 — HIFU console for lifting, with Tomas. Test spot and photos first.',
+    'T-303': 'Bay T-303 — HydraFacial system and facial steamer with Priya.',
+    'T-304': 'Bay T-304 — LED light therapy panel, and Kai floats the mobile laser here.',
+    'S-120': 'Sterilisation: autoclave row, ultrasonic cleaner, UV cabinet, and the chilled serum fridge at 4.2 C.',
+    'L-105': 'Waiting lounge with a big TV, comfortable seating, tea, and snacks while you wait. Ivy also covers aftercare here.',
     'D-108': 'Changing rooms and lockers with fresh linen before every bay.',
     'B-402': 'Boardroom for case reviews and brand checks. No filters on real results.',
     'N-401': 'Operations wall watches every room and keeps waits under 12 minutes.'
@@ -1745,8 +1964,8 @@ Add a prop
     const tools = document.getElementById('tools');
     const buttons = [
       ['full','Full Clinic'], ['yeyen','dr. Yeyen'], ['f2','2F Boardroom & Ops'], ['R-101','1F Reception'],
-      ['consult','1F Consultations'], ['P-110','1F Pantry'], ['treat','1F Treatment Suites'],
-      ['S-120','1F Sterilisation'], ['L-105','1F Patient Lounge'], ['D-108','1F Lockers']
+      ['consult','1F Consultations'], ['treat','1F Treatment Suites'], ['L-105','1F Waiting Lounge'],
+      ['P-110','1F Mini Kitchen'], ['M-130','1F Meeting Room'], ['S-120','1F Sterilisation'], ['D-108','1F Lockers']
     ];
     tools.innerHTML = buttons.map(([k, label]) => '<button type="button" data-focus="' + k + '">' + label + '</button>').join('')
       + '<button type="button" id="tour">Tour</button>'
@@ -1912,7 +2131,7 @@ Add a prop
   let guestAt = 6;
   let tickAt = 0;
   function loop(now) {
-    const raw = Math.min(0.1, (now - last) / 1000);
+    const raw = Math.max(0, Math.min(0.1, (now - last) / 1000));
     const dt = Math.min(0.05, raw) * (paused ? 0 : speed);
     last = now;
     if (!paused && raw > 0.034) slowFrames++;
@@ -1965,7 +2184,7 @@ Add a prop
       document.getElementById('tick').textContent = text + '    ' + text;
       if (selected) document.getElementById('d-state').textContent = selected.state + ' · ' + roomAt(selected.gx, selected.gy, selected.z).short;
     }
-    frame();
+    try { frame(); } catch (err) { if (!loop.warned) { loop.warned = true; console.warn('frame error', err); } }
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
