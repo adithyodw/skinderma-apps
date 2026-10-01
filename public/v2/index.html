@@ -66,6 +66,15 @@ Add a prop
   button.danger.on { background:var(--rose); color:#fff; border-color:var(--rose); }
   .status { font-size:12px; padding:6px 10px; border-radius:99px; background:#fff; border:1px solid var(--line); color:var(--muted); white-space:nowrap; flex:none; }
   .status.live { color:#166534; background:#ecfdf3; border-color:#bbf7d0; }
+  .book-card { position:fixed; z-index:5; left:max(12px, env(safe-area-inset-left)); bottom:calc(44px + env(safe-area-inset-bottom));
+    width:228px; background:#fffefb; border:1px solid #e6e0d4; border-radius:14px; padding:12px;
+    box-shadow:0 10px 28px rgba(63,74,60,.08); }
+  .book-card strong { display:block; font-size:13px; letter-spacing:-.02em; color:#2c3a32; }
+  .book-card p { margin:4px 0 10px; font-size:12px; line-height:1.35; color:#6d7468; }
+  .book-actions { display:flex; gap:6px; }
+  .book-actions a { flex:1; text-align:center; text-decoration:none; border-radius:99px; padding:7px 8px; font-size:12px; font-weight:700; }
+  .book-actions a.app { background:#fff; color:#3f4a3c; border:1px solid #e6e0d4; }
+  .book-actions a.wa { background:#3f7d68; color:#fff; }
   .ticker { position:fixed; z-index:4; left:0; right:0; bottom:0; min-height:32px; display:flex; align-items:center;
     gap:12px; padding:6px max(14px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
     background:rgba(255,253,248,.96); border-top:1px solid #e6e0d4; overflow:hidden; }
@@ -104,6 +113,11 @@ Add a prop
   @media (max-width: 860px) {
     .sub { display:none; }
     h1 { font-size:12.5px; }
+    .book-card { left:10px; right:10px; width:auto; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 10px; }
+    .book-card p { display:none; }
+    .book-card strong { font-size:12px; }
+    .book-actions { flex:none; }
+    .book-actions a { padding:7px 12px; }
     .drawer {
       top:auto; left:0; right:0; width:100%; height:min(68dvh, 560px);
       bottom:calc(36px + env(safe-area-inset-bottom));
@@ -132,6 +146,16 @@ Add a prop
   </div>
   <div id="tools"></div>
 </header>
+<aside class="book-card">
+  <div>
+    <strong>Book with us</strong>
+    <p>The same consultation as the patient app.</p>
+  </div>
+  <div class="book-actions">
+    <a class="app" href="/">Patient app</a>
+    <a class="wa" href="https://wa.me/6281261884912?text=Hello%20SKINDERMA%2C%20I%20would%20like%20to%20book%20a%20consultation." target="_blank" rel="noopener">WhatsApp</a>
+  </div>
+</aside>
 <div class="ticker">
   <b id="clockline">SKINDERMA · 2 floors</b>
   <div class="marquee"><span id="tick"></span></div>
@@ -434,7 +458,7 @@ Add a prop
     ctx.strokeStyle = grid;
     ctx.globalAlpha *= 0.65;
     ctx.lineWidth = 1;
-    const step = 1;
+    const step = view.zoom < 0.9 ? 2 : 1;
     for (let x = 0; x <= gw; x += step) {
       const p = iso(gx + x, gy, z), q = iso(gx + x, gy + gh, z);
       ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
@@ -777,19 +801,29 @@ Add a prop
     a.logs.length = Math.min(20, a.logs.length);
   }
   function goTo(a, x, y, z, after) {
-    const path = astar(a.gx, a.gy, a.z, x, y, z);
     a.after = after;
     a.dest = { x, y, z };
+    a.path = [];
+    a.state = 'WALKING';
+    a.recline = false;
+    a.job = { x, y, z };
+    if (pathJobs.indexOf(a) < 0) pathJobs.push(a);
+  }
+  const pathJobs = [];
+  function pumpPaths() {
+    const a = pathJobs.shift();
+    if (!a || a.dead || !a.job) return;
+    const path = astar(a.gx, a.gy, a.z, a.job.x, a.job.y, a.job.z);
+    a.job = null;
     if (!path.length) {
       a.path = [];
       a.state = 'AT_STATION';
-      a.say = 'Route blocked';
-      a.sayUntil = simT + 2;
+      a.say = 'One moment';
+      a.sayUntil = simT + 1.6;
       return;
     }
     a.path = path;
     a.state = 'WALKING';
-    a.recline = false;
   }
   function goHome(a) {
     a.rush = false;
@@ -875,7 +909,7 @@ Add a prop
   function updateActor(a, dt) {
     if (a.dead) return;
     if (a.state === 'WALKING') {
-      if (!a.path.length) { arrive(a); return; }
+      if (!a.path.length) { if (!a.job) arrive(a); return; }
       const n = a.path[0];
       const spd = 2.15 * (a.rush ? 1.85 : 1);
       if (Math.abs((a.z || 0) - n.z) > 1.5) {
@@ -1239,6 +1273,8 @@ Add a prop
     PROPS.forEach((p) => {
       const pz = p.z >= 40 ? 92 : 0;
       if (pz !== z) return;
+      const probe = iso((p.gx || 0) + 0.4, (p.gy || p.gy0 || 0) + 0.4, p.z || z);
+      if (probe.x < -80 || probe.y < -80 || probe.x > W + 80 || probe.y > H + 80) return;
       drawProp(p, simT);
     });
     actors.filter((s) => !s.dead && ((s.z >= 40 ? 92 : 0) === z)).sort((a, b) => (a.gx + a.gy) - (b.gx + b.gy)).forEach((s) => drawSim(s, simT));
@@ -1246,12 +1282,10 @@ Add a prop
   }
 
   function frame() {
-    ctx.clearRect(0, 0, W, H);
-    const sky = ctx.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0, '#f7f3ea'); sky.addColorStop(1, '#fbf8f2');
-    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#f7f3ea';
+    ctx.fillRect(0, 0, W, H);
     drawFloorLayer(0, 1);
-    drawFloorLayer(92, showFull ? 1 : 0.18);
+    if (showFull || view.zoom > 0.45) drawFloorLayer(92, showFull ? 1 : 0.18);
   }
 
   let activeFocus = 'full';
@@ -1270,12 +1304,15 @@ Add a prop
   function chromeInsets() {
     const hud = document.querySelector('.hud');
     const ticker = document.querySelector('.ticker');
+    const book = document.querySelector('.book-card');
     const top = (hud ? hud.getBoundingClientRect().bottom : 72) + 8;
-    const bottom = ticker ? (H - ticker.getBoundingClientRect().top) + 8 : 48;
+    let bottom = ticker ? (H - ticker.getBoundingClientRect().top) + 8 : 48;
+    if (book && W < 860) bottom = Math.max(bottom, H - book.getBoundingClientRect().top + 8);
     return { top, bottom, left: 12, right: 12 };
   }
   function resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const coarse = window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 900;
+    const dpr = Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2);
     const size = viewportSize();
     W = size.w; H = size.h;
     canvas.width = Math.floor(W * dpr); canvas.height = Math.floor(H * dpr);
@@ -1634,10 +1671,17 @@ Add a prop
     last = now;
     simT += dt;
     if (view.glide) {
-      view.x += (view.tx - view.x) * 0.08;
-      view.y += (view.ty - view.y) * 0.08;
-      view.zoom += (view.tz - view.zoom) * 0.08;
+      const dx = view.tx - view.x, dy = view.ty - view.y, dz = view.tz - view.zoom;
+      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 && Math.abs(dz) < 0.004) {
+        view.x = view.tx; view.y = view.ty; view.zoom = view.tz; view.glide = false;
+      } else {
+        view.x += dx * 0.16;
+        view.y += dy * 0.16;
+        view.zoom += dz * 0.16;
+      }
     }
+    pumpPaths();
+    pumpPaths();
     actors.forEach((a) => updateActor(a, dt));
     for (let i = actors.length - 1; i >= 0; i--) if (actors[i].dead) actors.splice(i, 1);
     const guests = actors.filter((a) => a.guest && !a.dead).length;
