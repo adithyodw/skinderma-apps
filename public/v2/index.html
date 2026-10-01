@@ -40,9 +40,11 @@ Add a prop
   html, body { margin:0; height:100%; height:100dvh; overflow:hidden; overscroll-behavior:none; touch-action:none;
     background:linear-gradient(180deg,#f7f3ea,#fbf8f2); color:var(--ink);
     font-family: "Segoe UI", ui-sans-serif, system-ui, sans-serif; }
-  canvas { display:block; width:100%; height:100%; height:100dvh; touch-action:none; }
+  body { -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none; }
+  canvas { display:block; width:100%; height:100%; height:100dvh; touch-action:none; user-select:none; -webkit-user-select:none; }
+  button, a { touch-action:manipulation; }
   button, input { font-family: inherit; }
-  .glass { background:rgba(255,255,255,.86); backdrop-filter:blur(14px); border:1px solid var(--line);
+  .glass { background:rgba(255,255,255,.96); border:1px solid var(--line);
     border-radius:16px; box-shadow:0 10px 30px rgba(15,23,42,.08); }
   .hud { position:fixed; z-index:5; top:0; left:0; right:0; display:flex; flex-direction:column; gap:4px; pointer-events:none;
     padding: max(6px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) 6px max(10px, env(safe-area-inset-left));
@@ -286,7 +288,10 @@ Add a prop
 (() => {
   const TW = 28, TH = 14;
   const canvas = document.getElementById('c');
-  const ctx = canvas.getContext('2d', { alpha: false });
+  const mainCtx = canvas.getContext('2d', { alpha: false });
+  // All draw helpers render through `ctx`; it is swapped to an offscreen layer while the static scene cache is built.
+  let ctx = mainCtx;
+  let curDpr = 1;
   if (!CanvasRenderingContext2D.prototype.roundRect) {
     CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
       const radius = Math.min(r || 0, w / 2, h / 2);
@@ -634,14 +639,17 @@ Add a prop
     ctx.globalAlpha *= 0.65;
     ctx.lineWidth = 1;
     const step = view.zoom < 0.9 ? 2 : 1;
+    // One path for the whole grid: a single stroke call instead of one per line.
+    ctx.beginPath();
     for (let x = 0; x <= gw; x += step) {
       const p = iso(gx + x, gy, z), q = iso(gx + x, gy + gh, z);
-      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+      ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y);
     }
     for (let y = 0; y <= gh; y += step) {
       const p = iso(gx, gy + y, z), q = iso(gx + gw, gy + y, z);
-      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+      ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y);
     }
+    ctx.stroke();
     ctx.globalAlpha /= 0.65;
   }
   function add(p) { if (p.sort == null) p.sort = (p.gx || 0) + (p.gy || 0) + (p.z || 0) * 0.001; PROPS.push(p); }
@@ -1434,6 +1442,7 @@ Add a prop
     beginScript(g);
   }
 
+  let voicesNow = 0; // speech bubbles currently showing; counted once per tick, not once per actor
   function updateActor(a, dt) {
     if (a.dead) return;
     if (a.pet) { updateDog(a, dt); return; }
@@ -1498,8 +1507,8 @@ Add a prop
       goTo(a, spot.x, spot.y, spot.z, 'BREAK');
       return;
     }
-    const voices = actors.filter((p) => p.say && simT < p.sayUntil).length;
-    if (a.state === 'AT_STATION' && voices < 3 && Math.random() < dt * 0.22) {
+    if (a.state === 'AT_STATION' && voicesNow < 3 && Math.random() < dt * 0.22) {
+      voicesNow++;
       const pool = STAFF_LINES[a.roleKey] || a.quotes;
       a.say = pool[Math.floor(Math.random() * pool.length)];
       a.sayUntil = simT + 3.2;
@@ -2539,8 +2548,22 @@ Add a prop
     ctx.fillStyle = '#4d564c';
     ctx.fillText(label, x + 8, p.y + 12);
   }
-  function drawFloorLayer(z, alpha) {
-    ctx.save(); ctx.globalAlpha = alpha;
+  // Props whose look changes frame to frame; everything else is rasterised into the static scene cache.
+  const ANIM_DEVICE = new Set(['laser', 'led', 'visia', 'steamer', 'uv', 'coffee', 'sylfirm']);
+  function isDynamicProp(p) {
+    if (p.type === 'device') return ANIM_DEVICE.has(p.kind);
+    return p.type === 'bigtv' || p.type === 'clave' || p.type === 'laser' || p.type === 'dogball' || p.type === 'clock';
+  }
+  let dynProps = null;
+  // Screen-space cull rectangle used by the prop loops (wider while filling the cache margin).
+  let cullX0 = -80, cullY0 = -80, cullX1 = 1360, cullY1 = 880;
+  function setCull(margin) { cullX0 = -margin - 80; cullY0 = -margin - 80; cullX1 = W + margin + 80; cullY1 = H + margin + 80; }
+  function propVisible(p, z) {
+    const probe = iso((p.gx || 0) + 0.4, (p.gy || p.gy0 || 0) + 0.4, p.z || z);
+    return !(probe.x < cullX0 || probe.y < cullY0 || probe.x > cullX1 || probe.y > cullY1);
+  }
+  // Static half of a floor: floor plates, grids, walls, nameplates, and all non-animated props.
+  function drawStaticLayer(z) {
     if (z === 0) {
       floorQuad(1, 1, 35, 28, 0, '#f3ece1', '#e7dfd0');
       // East wing (family playroom) floor plate, flush with the main building.
@@ -2548,16 +2571,10 @@ Add a prop
       // Outdoor lawn for the dog park, slightly proud of the ground with a mown-stripe grid.
       floorQuad(36.6, 19.6, 8.8, 8.8, 0.25, '#d6ead0', null);
       floorQuad(37, 20, 8, 8, 0.3, '#cfe3bb', '#c3d9ad');
+      const keep = ctx.globalAlpha;
       ctx.strokeStyle = COL.mint; ctx.globalAlpha *= 0.8;
       [[2, 9.4, 33, 0.08],[10.4, 2, 0.08, 26],[22.4, 10, 0.08, 18]].forEach(([x, y, w, h]) => floorQuad(x, y, w, h, 0.2, COL.sage, null));
-      if (!lowQ) {
-        const dots = (simT * 0.35) % 1;
-        for (let i = 0; i < 5; i++) {
-          const o = iso(4 + ((dots + i / 5) % 1) * 28, 9.5, 0.4);
-          ctx.fillStyle = COL.rose; ctx.beginPath(); ctx.arc(o.x, o.y, 2.2, 0, 7); ctx.fill();
-        }
-      }
-      ctx.globalAlpha = alpha;
+      ctx.globalAlpha = keep;
       // Structural columns sit directly under the 2F slab edge (slab underside is z 90).
       [[1.62, 6.06], [10.21, 6.06], [13.07, 6.06], [22.76, 6.06]].forEach(([x, y]) => box(x, y, 0.42, 0.42, 90, '#f8fafc', '#e2e8f0', '#cbd5e1', '#94a3b8', 0));
     }
@@ -2614,15 +2631,121 @@ Add a prop
       ctx.fillStyle = COL.sage; round(exit.x, exit.y, 18 * view.zoom, 12 * view.zoom, 3);
       ctx.fillStyle = '#fff'; ctx.font = '9px sans-serif'; ctx.fillText('EXIT', exit.x + 2, exit.y + 9 * view.zoom);
     }
-    PROPS.forEach((p) => {
-      const pz = p.z >= 40 ? 92 : 0;
-      if (pz !== z) return;
-      const probe = iso((p.gx || 0) + 0.4, (p.gy || p.gy0 || 0) + 0.4, p.z || z);
-      if (probe.x < -80 || probe.y < -80 || probe.x > W + 80 || probe.y > H + 80) return;
+    for (let i = 0; i < PROPS.length; i++) {
+      const p = PROPS[i];
+      if ((p.z >= 40 ? 92 : 0) !== z || isDynamicProp(p) || !propVisible(p, z)) continue;
       drawProp(p, simT);
-    });
+    }
+  }
+  // Live half of a floor: animated props and people, drawn on top of the cached static layer every frame.
+  function drawLiveLayer(z, alpha) {
+    ctx.save(); ctx.globalAlpha = alpha;
+    if (z === 0 && !lowQ) {
+      const dots = (simT * 0.35) % 1;
+      ctx.fillStyle = COL.rose;
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const o = iso(4 + ((dots + i / 5) % 1) * 28, 9.5, 0.4);
+        ctx.moveTo(o.x + 2.2, o.y); ctx.arc(o.x, o.y, 2.2, 0, 7);
+      }
+      ctx.fill();
+    }
+    if (!dynProps) dynProps = PROPS.filter(isDynamicProp);
+    for (let i = 0; i < dynProps.length; i++) {
+      const p = dynProps[i];
+      if ((p.z >= 40 ? 92 : 0) !== z || !propVisible(p, z)) continue;
+      drawProp(p, simT);
+    }
     actors.filter((s) => !s.dead && ((visZ(s) >= 40 ? 92 : 0) === z)).sort((a, b) => (a.gx + a.gy) - (b.gx + b.gy)).forEach((s) => drawSim(s, simT));
     ctx.restore();
+  }
+
+  // ---- Static scene cache -------------------------------------------------------------------
+  // ~94% of the canvas work per frame was floors, walls, and furniture that never move. Each floor
+  // is rasterised once per view into an offscreen layer with a pan margin; frames then blit the
+  // layer (offset for pans, scaled while a zoom glide/pinch is in flight) and draw only the live
+  // parts on top. The cache is rebuilt when the view settles at a new zoom, when a pan exposes
+  // the margin, or when something that changes the static look flips (night, size, focus).
+  const scene = { 0: null, 92: null, key: '', zoom: 0, x: 0, y: 0, mx: 0, my: 0 };
+  function sceneKey() { return [W, H, curDpr, night ? 1 : 0, lowQ ? 1 : 0, showFull ? 1 : 0, activeFocus].join('|'); }
+  function invalidateScene() { scene.key = ''; }
+  function sceneMargin() {
+    // Pan slack around the viewport, capped so both layers stay under ~6 MP each.
+    const px = W * H * curDpr * curDpr;
+    const f = Math.max(1, Math.min(1.6, Math.sqrt(6e6 / Math.max(1, px))));
+    return { mx: Math.round(W * (f - 1) / 2), my: Math.round(H * (f - 1) / 2) };
+  }
+  function buildScene() {
+    const { mx, my } = sceneMargin();
+    const cw = Math.max(1, Math.floor((W + 2 * mx) * curDpr)), ch = Math.max(1, Math.floor((H + 2 * my) * curDpr));
+    const savedHots = pharmHots, savedKiosk = kioskHot;
+    scene.hots = { 0: [], 92: [] }; scene.kiosk = { 0: null, 92: null };
+    [0, 92].forEach((z) => {
+      let L = scene[z];
+      if (!L) { L = scene[z] = { cv: document.createElement('canvas'), ctx: null }; }
+      if (L.cv.width !== cw || L.cv.height !== ch) { L.cv.width = cw; L.cv.height = ch; L.ctx = null; }
+      if (!L.ctx) L.ctx = L.cv.getContext('2d', { alpha: z !== 0 });
+      const c = L.ctx;
+      c.setTransform(1, 0, 0, 1, 0, 0);
+      if (z === 0) { c.fillStyle = night ? '#e9e4d8' : '#f7f3ea'; c.fillRect(0, 0, cw, ch); }
+      else c.clearRect(0, 0, cw, ch);
+      c.setTransform(curDpr, 0, 0, curDpr, mx * curDpr, my * curDpr);
+      ctx = c;
+      pharmHots = []; kioskHot = null;
+      setCull(Math.max(mx, my));
+      try { drawStaticLayer(z); } finally { ctx = mainCtx; }
+      scene.hots[z] = pharmHots; scene.kiosk[z] = kioskHot;
+    });
+    setCull(0);
+    pharmHots = savedHots; kioskHot = savedKiosk;
+    // Screen-space bounds of everything on the 2F slab (walls up to z 118 plus some headroom for nameplates).
+    const bb = { x0: 1e9, y0: 1e9, x1: -1e9, y1: -1e9 };
+    [[1.6, 0.45], [23.2, 0.45], [1.6, 6.6], [23.2, 6.6]].forEach(([gx, gy]) => [86, 150].forEach((gz) => {
+      const o = iso(gx, gy, gz);
+      bb.x0 = Math.min(bb.x0, o.x); bb.x1 = Math.max(bb.x1, o.x); bb.y0 = Math.min(bb.y0, o.y); bb.y1 = Math.max(bb.y1, o.y);
+    }));
+    scene.bbox92 = { x0: bb.x0 - 40, y0: bb.y0 - 40, x1: bb.x1 + 40, y1: bb.y1 + 40 };
+    scene.key = sceneKey(); scene.zoom = view.zoom; scene.x = view.x; scene.y = view.y; scene.mx = mx; scene.my = my;
+  }
+  function sceneCovers() {
+    // Does the cached bitmap (at its own zoom) still cover the current viewport?
+    const k = view.zoom / scene.zoom;
+    const x0 = (0 - view.x) / k + scene.x, x1 = (W - view.x) / k + scene.x;
+    const y0 = (0 - view.y) / k + scene.y, y1 = (H - view.y) / k + scene.y;
+    return x0 >= -scene.mx && x1 <= W + scene.mx && y0 >= -scene.my && y1 <= H + scene.my;
+  }
+  function ensureScene() {
+    if (!scene[0] || scene.key !== sceneKey()) { buildScene(); return; }
+    const k = view.zoom / scene.zoom;
+    const moving = view.glide || pinch || (drag && pointers.size > 0);
+    if (Math.abs(k - 1) > 1e-6 && (!moving || Math.abs(k - 1) > 0.3)) { buildScene(); return; }
+    if (!sceneCovers()) buildScene();
+  }
+  function blitScene(z, alpha) {
+    const L = scene[z];
+    if (!L) return;
+    const k = view.zoom / scene.zoom;
+    let dx = view.x - scene.x * k - scene.mx * k, dy = view.y - scene.y * k - scene.my * k;
+    if (Math.abs(k - 1) < 1e-6) { dx = Math.round(dx * curDpr) / curDpr; dy = Math.round(dy * curDpr) / curDpr; }
+    const dw = (W + 2 * scene.mx) * k, dh = (H + 2 * scene.my) * k;
+    // Copy only the part of the layer that lands inside the viewport (source rect in device px).
+    let cx0 = Math.max(0, dx), cy0 = Math.max(0, dy), cx1 = Math.min(W, dx + dw), cy1 = Math.min(H, dy + dh);
+    if (z === 92) {
+      // The 2F layer is mostly transparent; clip to the slab's screen bounds (computed at build time).
+      const b = scene.bbox92, ox = view.x - scene.x * k, oy = view.y - scene.y * k;
+      cx0 = Math.max(cx0, ox + b.x0 * k); cy0 = Math.max(cy0, oy + b.y0 * k);
+      cx1 = Math.min(cx1, ox + b.x1 * k); cy1 = Math.min(cy1, oy + b.y1 * k);
+    }
+    if (cx1 <= cx0 || cy1 <= cy0) return;
+    const s = curDpr / k;
+    ctx.save(); ctx.globalAlpha = alpha;
+    ctx.drawImage(L.cv, (cx0 - dx) * s, (cy0 - dy) * s, (cx1 - cx0) * s, (cy1 - cy0) * s, cx0, cy0, cx1 - cx0, cy1 - cy0);
+    ctx.restore();
+    // Re-project the tap targets recorded at build time into live screen space.
+    const ox = view.x - scene.x * k, oy = view.y - scene.y * k;
+    scene.hots[z].forEach((h) => pharmHots.push({ x: ox + h.x * k, y: oy + h.y * k, w: h.w * k, h: h.h * k }));
+    const kh = scene.kiosk[z];
+    if (kh) kioskHot = { x: ox + kh.x * k, y: oy + kh.y * k, w: kh.w * k, h: kh.h * k };
   }
 
   function addPharmHot(gx0, gy0, gx1, gy1, z, lift) {
@@ -2801,10 +2924,16 @@ Add a prop
   function frame() {
     kioskHot = null;
     pharmHots = [];
+    ensureScene();
     ctx.fillStyle = night ? '#e9e4d8' : '#f7f3ea';
     ctx.fillRect(0, 0, W, H);
-    drawFloorLayer(0, 1);
-    if (showFull || view.zoom > 0.45) drawFloorLayer(92, showFull ? 1 : 0.18);
+    blitScene(0, 1);
+    drawLiveLayer(0, 1);
+    if (showFull || view.zoom > 0.45) {
+      const a = showFull ? 1 : 0.18;
+      blitScene(92, a);
+      drawLiveLayer(92, a);
+    }
     if (night) {
       ctx.fillStyle = 'rgba(23,32,48,.26)';
       ctx.fillRect(0, 0, W, H);
@@ -2845,13 +2974,20 @@ Add a prop
   }
   function resize() {
     const coarse = window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 900;
-    let dpr = Math.min(window.devicePixelRatio || 1, coarse ? 1.25 : 1.75);
+    // Phones/tablets get 1.5x (crisp on Retina/AMOLED, still cheap now that the scene is cached); desktops 1.75x.
+    let dpr = Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 1.75);
     if (lowQ) dpr = Math.min(dpr, 1);
     const size = viewportSize();
-    W = size.w; H = size.h;
+    const nw = Math.max(1, Math.round(size.w)), nh = Math.max(1, Math.round(size.h));
+    // Keep the main canvas (and therefore each cached layer) under ~9 MP on very large screens.
+    dpr = Math.max(1, Math.min(dpr, Math.sqrt(9e6 / (nw * nh))));
+    if (nw === W && nh === H && dpr === curDpr && canvas.width === Math.floor(nw * dpr)) return;
+    W = nw; H = nh; curDpr = dpr;
     canvas.width = Math.floor(W * dpr); canvas.height = Math.floor(H * dpr);
     canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    mainCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    setCull(0);
+    invalidateScene();
   }
   function fitCampus() {
     const corners = [[1, 1, 0], [36, 1, 0], [1, 29, 0], [36, 29, 0], [45.5, 10, 0], [45.5, 28.5, 0], [1.6, 0.45, 120], [23.2, 6.6, 130]];
@@ -3407,25 +3543,28 @@ Add a prop
     }
     pumpPaths();
     pumpPaths();
-    actors.forEach((a) => updateActor(a, dt));
+    voicesNow = 0;
+    for (let i = 0; i < actors.length; i++) if (actors[i].say && simT < actors[i].sayUntil) voicesNow++;
+    for (let i = 0; i < actors.length; i++) updateActor(actors[i], dt);
     for (let i = actors.length - 1; i >= 0; i--) if (actors[i].dead) actors.splice(i, 1);
-    const guests = actors.filter((a) => a.guest && !a.dead).length;
+    let guests = 0;
+    for (let i = 0; i < actors.length; i++) if (actors[i].guest) guests++;
     if (simT > guestAt && guests < 5) { spawnGuest(); guestAt = simT + 24; }
-    if (simT > pinkUntil) {
-      const pink = document.getElementById('pink');
-      if (pink && pink.classList.contains('on')) pink.classList.remove('on');
-    }
+    if (simT > pinkUntil && pinkBtn && pinkBtn.classList.contains('on')) pinkBtn.classList.remove('on');
     if (now > tickAt) {
       tickAt = now + 1000;
       const d = new Date();
-      document.getElementById('clockline').textContent = 'SKINDERMA · 2 floors · ' + d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+      clockEl.textContent = 'SKINDERMA · 2 floors · ' + d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
       const text = actors.filter((a) => !a.guest && !a.dead && !a.pet && !a.kid).map((a) => a.handle + ' · ' + roomAt(a.gx, a.gy, a.z).short).join('    ');
-      document.getElementById('tick').textContent = text + '    ' + text;
-      if (selected) document.getElementById('d-state').textContent = selected.state + ' · ' + roomAt(selected.gx, selected.gy, selected.z).short;
+      tickEl.textContent = text + '    ' + text;
+      if (selected) stateEl.textContent = selected.state + ' · ' + roomAt(selected.gx, selected.gy, selected.z).short;
     }
     try { frame(); } catch (err) { if (!loop.warned) { loop.warned = true; console.warn('frame error', err); } }
     requestAnimationFrame(loop);
   }
+  const pinkBtn = document.getElementById('pink'), clockEl = document.getElementById('clockline'), tickEl = document.getElementById('tick'), stateEl = document.getElementById('d-state');
+  // Avoid a burst of catch-up work when the tab comes back: reset the frame clock instead.
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) last = performance.now(); });
   requestAnimationFrame(loop);
 })();
 </script>
