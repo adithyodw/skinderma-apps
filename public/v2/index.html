@@ -575,22 +575,18 @@ Add a prop
   function furnish() {
     const seats = {};
     STAFF.forEach((s) => { seats[s.handle] = { x: s.home[0], y: s.home[1], z: s.home[2] }; });
-    workstation(13.6, 12.2, 0, COL.blush, false);
-    workstation(16.8, 12.2, 0, COL.mint, false);
-    seats['@reception_mia'] = { x: 14.3, y: 13.5, z: 0 };
-    seats['@reception_jun'] = { x: 17.5, y: 13.5, z: 0 };
-    addBox(14.2, 11.55, 6.2, 0.7, 7.2, '#ffffff', 0);
-    addBox(22.6, 13.4, 0.4, 2.2, 8, '#ffffff', 0);
-    for (let i = 0; i < 6; i++) addBox(22.75, 13.55 + (i % 3) * 0.55, 0.18, 0.18, 2.2 + (i % 2), ['#F4A7B9','#7ED3B2','#8EC5FF','#F2C14E','#B8A1F2','#ffffff'][i], 8);
-    sofa(13.2, 16.2, 2.4, COL.blush, '#fff', 0, false);
-    sofa(16.4, 16.2, 2.2, COL.mint, '#fff', 0, false);
-    sofa(19.2, 16.3, 2.2, COL.sky, '#fff', 0, false);
-    addBox(15.2, 15.3, 0.7, 0.7, 2.4, '#ffffff', 0);
-    addBox(18.2, 15.3, 0.7, 0.7, 2.4, '#ffffff', 0);
-    bigTV(19.9, 10.35, 12, 2.6, 'Welcome to SKINDERMA');
-    add({ type:'clock', gx: 17.2, gy: 10.4, z: 22 });
-    add({ type:'logo', gx: 15.2, gy: 10.35, z: 24 });
-    addBox(24.8, 16.6, 0.8, 0.8, 7, '#ffffff', 0, '#e2e8f0', COL.sky);
+    workstation(13, 12, 0, COL.blush, false);
+    workstation(17, 12, 0, COL.mint, false);
+    seats['@reception_mia'] = { x: 13.7, y: 13.3, z: 0 };
+    seats['@reception_jun'] = { x: 17.7, y: 13.3, z: 0 };
+    add({ type:'wordmark', gx: 13.2, gy: 10.22, z: 16 });
+    add({ type:'menu', gx: 19.4, gy: 10.22, z: 12 });
+    sofa(13, 16, 2.4, '#f8e7ee', '#fff', 0, false);
+    sofa(16.2, 16, 2.4, '#e7f3ee', '#fff', 0, false);
+    sofa(19.4, 16, 2.4, '#e7eef8', '#fff', 0, false);
+    addBox(14.2, 15, 0.8, 0.7, 2.2, '#ffffff', 0, '#f3eee6', '#e4ddd0');
+    addBox(17.4, 15, 0.8, 0.7, 2.2, '#ffffff', 0, '#f3eee6', '#e4ddd0');
+    addBox(24, 13, 1.2, 0.6, 8, '#ffffff', 0, '#f3eee6', '#e4ddd0');
     for (let i = 0; i < 4; i++) pendant(14 + i * 2.3, 14.5, 0);
     planter(12.2, 17.2, 0); planter(25.4, 17.2, 0);
     sanitiser(12.2, 17.8, 0); sanitiser(26.2, 17.6, 0);
@@ -654,38 +650,25 @@ Add a prop
 
     restroomAndLockers();
 
-    addBox(3.2, 3.2, 6.4, 1.15, 6, '#ffffff', 92);
-    for (let i = 0; i < 5; i++) chair(3.6 + i, 4.5, 92, i % 2 ? COL.sky : '#fff', false);
-    add({ type:'screenbank', gx: 4.6, gy: 1.25, z: 104, n: 1 });
-    planter(2.6, 6.4, 92); planter(10.2, 6.4, 92);
-    addBox(2.4, 5.5, 1.3, 0.55, 6, '#ffffff', 92, '#e2e8f0', '#cbd5e1');
-    addBox(8.8, 5.6, 1.5, 0.55, 5, '#f8fafc', 92, '#e2e8f0', COL.sky);
-    addBox(2.5, 2.4, 0.7, 1.6, 8, '#ffffff', 92, '#e7e1d6', '#d5cec1');
-    workstation(3.4, 5.2, 92, COL.gold, false);
-    seats['@finance_ada'] = { x: 4.1, y: 6.5, z: 92 };
-    seats['@brand_leo'] = { x: 6.8, y: 4.7, z: 92 };
-    seats['@social_zoe'] = { x: 7.8, y: 4.7, z: 92 };
-    add({ type:'laptop', gx: 6.5, gy: 3.55, z: 98.2 });
-    add({ type:'laptop', gx: 7.6, gy: 3.55, z: 98.2 });
+    addBox(3, 3, 6, 1.2, 6, '#ffffff', 92, '#f3eee6', '#e4ddd0');
+    for (let i = 0; i < 5; i++) chair(3.3 + i * 1.1, 4.4, 92, i % 2 ? '#d7e4ef' : '#ffffff', false);
+    add({ type:'screenbank', gx: 4.2, gy: 1.2, z: 104, n: 1 });
+    workstation(3, 5, 92, COL.gold, false);
+    seats['@finance_ada'] = { x: 3.7, y: 6.3, z: 92 };
+    seats['@brand_leo'] = { x: 6.4, y: 4.6, z: 92 };
+    seats['@social_zoe'] = { x: 7.5, y: 4.6, z: 92 };
+    add({ type:'laptop', gx: 6.2, gy: 3.3, z: 98.2 });
+    add({ type:'laptop', gx: 7.3, gy: 3.3, z: 98.2 });
 
-    add({ type:'screenbank', gx: 13.4, gy: 1.22, z: 104, n: 3 });
-    addBox(13.3, 5.9, 6.4, 0.45, 4, '#ffffff', 92, '#e2e8f0', '#cbd5e1');
-    addBox(20.2, 2.2, 0.7, 2.4, 10, '#f8fafc', 92, '#e2e8f0', COL.sky);
-    for (let i = 0; i < 3; i++) {
-      const accent = [COL.sage, COL.gold, COL.sky][i];
-      workstation(13.2 + i * 1.85, 2.5, 92, accent, false);
-    }
-    seats['@ops_lucas'] = { x: 13.9, y: 3.8, z: 92 };
-    seats['@ops_sara'] = { x: 15.75, y: 3.8, z: 92 };
-    seats['@ops_wei'] = { x: 17.6, y: 3.8, z: 92 };
-    addBox(13.4, 5.3, 2.2, 0.8, 3, COL.gold, 92);
-    addBox(16.4, 5.4, 2.2, 0.8, 3, '#ffffff', 92);
-    addBox(15.2, 5.15, 0.7, 0.55, 2.2, '#ffffff', 92);
-    workstation(19.3, 4.5, 92, COL.sage, false);
-    seats['@manager_suwandi'] = { x: 20.0, y: 5.8, z: 92 };
-    planter(21.4, 6.2, 92); planter(12.5, 6.3, 92);
-    for (let i = 0; i < 4; i++) pendant(14 + i * 1.8, 3.2, 92);
-    add({ type:'lift', gx: 10.35, gy: 5.55, z: 0 });
+    add({ type:'screenbank', gx: 13, gy: 1.2, z: 104, n: 3 });
+    for (let i = 0; i < 3; i++) workstation(13 + i * 2, 2.5, 92, [COL.sage, COL.gold, COL.sky][i], false);
+    seats['@ops_lucas'] = { x: 13.7, y: 3.8, z: 92 };
+    seats['@ops_sara'] = { x: 15.7, y: 3.8, z: 92 };
+    seats['@ops_wei'] = { x: 17.7, y: 3.8, z: 92 };
+    workstation(19.5, 4.5, 92, COL.sage, false);
+    seats['@manager_suwandi'] = { x: 20.2, y: 5.8, z: 92 };
+    addBox(13, 5.6, 4, 0.6, 3, '#ffffff', 92, '#f3eee6', '#e4ddd0');
+    add({ type:'stairs', gx: 10.95, gy: 8.05, z: 0 });
 
     dressClinic();
 
@@ -706,12 +689,7 @@ Add a prop
     rug(3.2, 15.6, 6.4, 3.2, '#e8f1fb');
     rug(28.6, 12.8, 6.0, 4.6, '#f3ece1');
 
-    sofa(12.2, 17.5, 2.1, '#ffffff', COL.blush, 0, false);
-    sofa(21.2, 16.6, 1.8, COL.sky, '#ffffff', 0, false);
-    addBox(20.4, 15.2, 0.55, 0.45, 4.2, '#ffffff', 0);
-    addBox(12.4, 15.0, 0.7, 0.4, 5.5, '#ffffff', 0, '#e7e1d6', COL.mint);
-    planter(11.6, 14.2, 0); planter(26.2, 14.8, 0); planter(23.4, 17.6, 0);
-    for (let i = 0; i < 4; i++) addBox(23.2, 14.6 + i * 0.45, 0.28, 0.22, 1.2, ['#F4A7B9', '#7ED3B2', '#F2C14E', '#8EC5FF'][i], 0);
+    planter(26.2, 17.4, 0);
 
     addBox(24.5, 7.4, 3.6, 0.4, 4.5, '#ffffff', 0);
     addBox(30.5, 7.4, 3.6, 0.4, 4.5, '#ffffff', 0);
@@ -738,7 +716,7 @@ Add a prop
     addBox(6.2, 22.2, 0.4, 0.8, 4, '#ffffff', 0);
     planter(3.4, 25.6, 0);
 
-    [[10.5, 8.6], [10.5, 19.4], [22.4, 9.4], [27.4, 18.8], [21.6, 20.2], [9.2, 9.2]].forEach(([x, y]) => planter(x, y, 0));
+    [[10.5, 19.4], [22.4, 9.4], [27.4, 18.8], [21.6, 20.2]].forEach(([x, y]) => planter(x, y, 0));
     pendant(16.2, 5.2, 0); pendant(6.2, 5.2, 0); pendant(26.4, 16.2, 0);
     hospitalDress();
   }
@@ -754,7 +732,7 @@ Add a prop
     addBox(12.6, 18.6, 0.45, 0.45, 6, '#f1f8ff', 0, '#dbeafe', '#bcd6f5');
     addBox(33.0, 24.6, 0.5, 0.5, 6, '#fef2f2', 0, '#fecaca', '#f87171');
     addBox(33.05, 24.65, 0.4, 0.4, 1.6, '#ef4444', 6);
-    addBox(2.9, 19.0, 0.4, 0.4, 5.5, '#fef9c3', 0, '#fde68a', '#f59e0b');
+    addBox(9, 19.4, 0.4, 0.4, 5.5, '#fef9c3', 0, '#fde68a', '#f59e0b');
     addBox(23.5, 19.0, 0.4, 0.35, 4.5, '#fef9c3', 0, '#fde68a', '#f59e0b');
     addBox(23.4, 20.0, 0.9, 0.5, 3.4, '#f8fafc', 0, '#e2e8f0', '#cbd5e1');
     for (let i = 0; i < 3; i++) addBox(23.5 + i * 0.26, 20.1, 0.16, 0.3, 1.6, ['#F4A7B9', '#7ED3B2', '#8EC5FF'][i], 3.4);
@@ -779,16 +757,15 @@ Add a prop
   function kitchenAndMeeting() {
     const wood = '#f6efe0', woodL = '#e8dfc9', woodR = '#d8ccb0';
     // Mini kitchen: base cabinets, stone top, backsplash and wall cabinets.
-    addBox(3.35, 10.28, 4.7, 0.82, 1.3, '#cfc6b4', 0, '#b7ad9a', '#a39682');
-    addBox(3.4, 10.3, 4.5, 0.75, 7.2, wood, 1.2, woodL, woodR);
-    addBox(3.45, 10.22, 4.4, 0.12, 6.4, '#f4efe6', 2.2, '#e7dfd2', '#d9d0c0');
-    addBox(3.32, 10.18, 4.75, 0.95, 0.7, '#f7f4ee', 8.4, '#ece6da', '#ddd4c4');
-    addBox(3.4, 10.12, 4.5, 0.42, 5.2, wood, 16.2, woodL, woodR);
+    addBox(3, 10.35, 5, 0.7, 7.4, wood, 0, woodL, woodR);
+    addBox(2.9, 10.25, 5.2, 1.05, 0.7, '#f7f4ee', 7.4, '#ece6da', '#d9d0c0');
+    addBox(4.3, 10.45, 0.7, 0.45, 0.35, '#e7eef3', 8.1, '#d5e2ea', '#c5d4de');
+    addBox(3, 10.15, 5, 0.38, 4.6, wood, 16, woodL, woodR);
     addBox(6.45, 10.08, 1.25, 0.5, 2.4, '#e8eef2', 14.2, '#d5dee6', '#c3ced8');
-    device('coffee', 3.55, 10.42, 9.1, 'Coffee');
-    device('fruit', 4.75, 10.48, 9.1);
-    device('snacks', 5.55, 10.5, 9.1);
-    device('microwave', 6.7, 10.38, 9.1, 'Microwave');
+    device('coffee', 3.2, 10.5, 8.1, 'Coffee');
+    device('fruit', 5.2, 10.55, 8.1);
+    device('snacks', 5.9, 10.55, 8.1);
+    device('microwave', 6.6, 10.45, 8.1, 'Microwave');
     device('fridge', 8.15, 10.2, 0, 'Fridge');
     addBox(2.45, 11.7, 0.45, 0.45, 10, '#f8fafc', 0, '#e2e8f0', COL.sky);
     addBox(2.5, 11.75, 0.35, 0.35, 3.5, '#bfe3ff', 10, '#a6d4f7', '#8cc4ee');
@@ -862,7 +839,6 @@ Add a prop
     add({ type:'restroom', kind:'mirror', gx:4.15, gy:24.98, z:10 });
     addBox(5.3, 26.2, 0.42, 0.42, 4.6, '#fff3f6', 0, '#f7dce4', '#efc7d2');
     addBox(5.37, 26.27, 0.28, 0.28, 1.2, '#c9a86a', 4.6);
-    add({ type:'art', gx:2.25, gy:20.35, z:16, c1:'#fdecef', c2:'#dcefe6' });
     sanitiser(2.35, 27.0, 0);
     pendant(3.1, 25.7, 0); pendant(5.0, 25.7, 0);
 
@@ -894,11 +870,11 @@ Add a prop
     device('kiosk', 21.7, 12.4, 0, 'Check-in kiosk');
     device('crash', 22.0, 18.1, 0, 'Crash cart');
   }
-  function liftCell(x, y) { return x >= 11 && x <= 12 && y >= 6 && y <= 8; }
+  function stairCell(x, y) { return x >= 11 && x <= 12 && y >= 6 && y <= 10; }
   function walkable(x, y, z) {
     if (DOORS.some((d) => d[0] === x && d[1] === y) && z === 0) return true;
     if (z >= 40) {
-      if (liftCell(x, y)) return true;
+      if (stairCell(x, y)) return true;
       return ROOMS.some((r) => r.z === 92 && r.shell && x > r.gx && x < r.gx + r.gw - 1 && y > r.gy && y < r.gy + r.gh - 1);
     }
     if (x < 1 || y < 1 || x > 36 || y > 28) return false;
@@ -949,7 +925,7 @@ Add a prop
       }
       const neigh = [[1,0],[ -1,0],[0,1],[0,-1]].map(([dx, dy]) => ({ x: cur.x + dx, y: cur.y + dy, z: cur.z }))
         .filter((n) => walkable(n.x, n.y, n.z));
-      if (liftCell(cur.x, cur.y)) neigh.push({ x: cur.x, y: cur.y, z: cur.z === 0 ? 92 : 0 });
+      if (stairCell(cur.x, cur.y)) neigh.push({ x: cur.x, y: cur.y, z: cur.z === 0 ? 92 : 0 });
       for (const n of neigh) {
         const nk = key(n);
         const ng = g[ck] + (n.z !== cur.z ? 2 : 1);
@@ -966,7 +942,7 @@ Add a prop
       if ((r.z || 0) !== zf) continue;
       if (gx >= r.gx && gx < r.gx + r.gw && gy >= r.gy && gy < r.gy + r.gh) hit = r;
     }
-    if (zf === 0 && liftCell(Math.round(gx), Math.round(gy))) return { short:'Lift', name:'Medical Lift' };
+    if (zf === 0 && stairCell(Math.round(gx), Math.round(gy))) return { short:'Stairs', name:'Staircase' };
     return hit || { short: zf ? '2F hall' : 'Corridor', name: 'Corridor' };
   }
   function log(a, text) {
@@ -1047,15 +1023,22 @@ Add a prop
       quotes: PATIENT_LINES
     }, true);
   }
-  function makeVVIPPatient() {
+  const VVIP = [
+    { handle:'@vvip_nilbean', name:'Nilbean', home:[30.2, 15.8, 0], hair:'#3f3f46', skin:'#e7b48f', acc:'glasses' },
+    { handle:'@vvip_evi', name:'Evi', home:[29.2, 14.4, 0], hair:'#6b3f2a', skin:'#f3d2b8', acc:'headband' },
+    { handle:'@vvip_jerrica', name:'Jerrica', home:[32.6, 15.6, 0], hair:'#1f2937', skin:'#f6d3b8', acc:'none' },
+    { handle:'@vvip_carsteniel', name:'Carsteniel', home:[31.2, 13.8, 0], hair:'#111827', skin:'#d9a27a', acc:'glasses' },
+    { handle:'@vvip_carnelio', name:'Carnelio', home:[33.8, 14.2, 0], hair:'#92400e', skin:'#c98b62', acc:'none' }
+  ];
+  function makeVVIPPatient(person, index) {
     const a = makeActor({
-      handle:'@vvip_nilbean', name:'Nilbean', role:'VVIP Patient', group:'Guest', roleKey:'reception',
-      home:[30.2,15.8,0], room:'L-105', uniform:'#f7efe2', hair:'#3f3f46', skin:'#e7b48f', acc:'glasses', vvip:true,
-      lay:'Nilbean is a VVIP patient visiting SKINDERMA for a private physician consultation and a personalised treatment plan.',
+      handle: person.handle, name: person.name, role:'VVIP Guest', group:'Guest', roleKey:'reception',
+      home: person.home, room:'L-105', uniform:'#f7efe2', hair: person.hair, skin: person.skin, acc: person.acc, vvip:true,
+      lay: person.name + ' is a VVIP guest at SKINDERMA, received in the private lounge before a physician consultation.',
       tech:['Private arrival and lounge','Physician-led consultation','Dedicated treatment bay','Discreet aftercare handoff'],
       quotes:['The clinic feels calm.','Thank you for the private care.','Everything is excellent.']
     }, false);
-    a.nextBreak = 14;
+    a.nextBreak = 16 + index * 7;
     return a;
   }
   function beginScript(g) {
@@ -1341,28 +1324,51 @@ Add a prop
       ctx.restore();
       return;
     }
-    if (p.type === 'lift') {
-      const x = p.gx, y = p.gy, z = p.z || 0;
-      [[0, 0], [2.15, 0], [0, 2.05], [2.15, 2.05]].forEach(([dx, dy]) => {
-        box(x + dx, y + dy, 0.16, 0.16, 94, '#d5dde4', '#b7c3ce', '#8fa0ae', null, z);
-      });
-      ctx.save(); ctx.globalAlpha *= 0.22;
-      box(x + 0.16, y + 0.16, 1.99, 1.89, 90, 'rgba(226,242,250,.9)', 'rgba(186,214,230,.55)', 'rgba(226,242,250,.75)', null, z + 2);
-      ctx.restore();
-      [4, 70].forEach((level, floor) => {
-        box(x + 0.28, y + 1.92, 0.82, 0.1, 16, '#f8fafc', '#e2e8f0', '#cbd5e1', null, z + level);
-        box(x + 1.16, y + 1.92, 0.82, 0.1, 16, '#f8fafc', '#e2e8f0', '#cbd5e1', null, z + level);
-        box(x + 1.08, y + 1.9, 0.06, 0.08, 16, '#94a3b8', '#64748b', '#475569', null, z + level);
-        box(x + 2.28, y + 1.55, 0.18, 0.22, 4.2, '#1e293b', '#0f172a', '#334155', null, z + level + 6);
-        const panel = iso(x + 2.36, y + 1.66, z + level + 8.4);
-        ctx.fillStyle = floor ? '#F2C14E' : '#5FB382';
-        ctx.font = '700 ' + Math.max(8, 9 * view.zoom) + 'px sans-serif';
-        ctx.fillText(floor ? '2' : '1', panel.x, panel.y);
-        const up = iso(x + 2.32, y + 1.62, z + level + 6.6);
-        ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(up.x, up.y + 3); ctx.lineTo(up.x + 3, up.y); ctx.lineTo(up.x + 6, up.y + 3); ctx.stroke();
-      });
-      box(x + 0.35, y + 0.4, 1.55, 1.35, 14, '#f8fafc', '#e7edf2', '#d3dce4', null, z + 6);
+    if (p.type === 'wordmark') {
+      box(p.gx, p.gy, 4.6, 0.08, 7.2, '#fffdf8', '#f3eee6', '#e6dece', null, p.z);
+      const o = iso(p.gx + 0.35, p.gy + 0.02, p.z + 5.4);
+      ctx.fillStyle = '#3f7d68';
+      ctx.font = '700 ' + Math.max(11, 15 * Math.min(view.zoom, 1.2)) + 'px "Palatino Linotype", Georgia, serif';
+      ctx.fillText('SKINDERMA', o.x, o.y);
+      ctx.fillStyle = '#8a7350';
+      ctx.font = '600 ' + Math.max(8, 9 * Math.min(view.zoom, 1.2)) + 'px "Palatino Linotype", Georgia, serif';
+      ctx.fillText('AESTHETIC CLINIC', o.x, o.y + 14 * Math.min(view.zoom, 1.2));
+      return;
+    }
+    if (p.type === 'menu') {
+      const names = ['Allergan', 'Ultherapy', 'Profhilo', 'Rejuran', 'Lutronic', 'Candela', 'Asclepion', 'Teosyal', 'Dermapen', 'PDRN PLINEST', 'Thermage FLX', 'Radiesse'];
+      box(p.gx, p.gy, 5.2, 0.1, 12, '#243044', '#1e293b', '#111827', null, p.z);
+      const o = iso(p.gx + 0.18, p.gy + 0.02, p.z + 11);
+      const w = 118 * Math.min(view.zoom, 1.3);
+      const h = 78 * Math.min(view.zoom, 1.3);
+      ctx.fillStyle = '#fffdf8';
+      ctx.fillRect(o.x, o.y - h, w, h);
+      ctx.fillStyle = '#3f7d68';
+      ctx.fillRect(o.x, o.y - h, w, 16 * Math.min(view.zoom, 1.2));
+      ctx.fillStyle = '#fff';
+      ctx.font = '700 ' + Math.max(8, 9 * view.zoom) + 'px sans-serif';
+      ctx.fillText('Clinically validated', o.x + 6, o.y - h + 11 * Math.min(view.zoom, 1.2));
+      if (view.zoom >= 0.85) {
+        ctx.font = '600 ' + Math.max(7, 8 * Math.min(view.zoom, 1.15)) + 'px sans-serif';
+        ctx.fillStyle = '#3f4a3c';
+        names.forEach((name, i) => {
+          const col = i < 6 ? 0 : 1;
+          const row = i % 6;
+          ctx.fillText(name, o.x + 6 + col * w * 0.5, o.y - h + (28 + row * 11) * Math.min(view.zoom, 1.15));
+        });
+      }
+      return;
+    }
+    if (p.type === 'stairs') {
+      const x = p.gx;
+      for (let i = 0; i < 8; i++) {
+        const y = 10.45 - i * 0.3;
+        const top = ((i + 1) / 8) * 92;
+        box(x, y, 1.5, 0.3, top, '#fbf8f2', '#e8e1d4', '#d4ccbe', null, 0);
+      }
+      box(x - 0.05, 7.85, 1.6, 0.6, 2, '#fbf8f2', '#e8e1d4', '#d4ccbe', null, 90);
+      box(x - 0.08, 10.35, 0.08, 0.08, 18, '#c5bba8', '#b3a890', '#9c927c', null, 0);
+      box(x - 0.08, 8.15, 0.08, 0.08, 96, '#c5bba8', '#b3a890', '#9c927c', null, 0);
       return;
     }
   }
@@ -1682,7 +1688,7 @@ Add a prop
   function drawNameplate(r) {
     if (r.label && view.zoom < 1.12) return;
     if (!r.label && view.zoom < 0.82 && activeFocus !== r.id) return;
-    const p = iso(r.gx + 0.7, r.gy + 0.35, (r.z || 0) + (r.label ? 8 : 24));
+    const p = iso(r.gx + Math.min(1.8, r.gw * 0.34), r.gy + 0.12, (r.z || 0) + (r.label ? 8 : 18));
     const label = (r.z ? '2F ' : '1F ') + r.short;
     ctx.font = '700 11px sans-serif';
     const w = ctx.measureText(label).width + 14;
@@ -1731,7 +1737,7 @@ Add a prop
       });
     }
     ROOMS.filter((r) => (r.z || 0) === z && (r.shell || r.label)).forEach(drawNameplate);
-    const exit = iso(2.4, 19.2, 20);
+    const exit = iso(10.2, 19.45, 16);
     if (z === 0) {
       ctx.fillStyle = COL.sage; round(exit.x, exit.y, 18 * view.zoom, 12 * view.zoom, 3);
       ctx.fillStyle = '#fff'; ctx.font = '9px sans-serif'; ctx.fillText('EXIT', exit.x + 2, exit.y + 9 * view.zoom);
@@ -2154,7 +2160,7 @@ Add a prop
 
   furnish();
   STAFF.forEach((s) => { const a = makeActor(s); a.tab = 'Layman'; actors.push(a); });
-  { const a = makeVVIPPatient(); a.tab = 'Layman'; actors.push(a); }
+  VVIP.forEach((person, index) => { const a = makeVVIPPatient(person, index); a.tab = 'Layman'; actors.push(a); });
   buildTools();
   bootLogo();
   resize();
