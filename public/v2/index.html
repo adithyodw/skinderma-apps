@@ -227,7 +227,7 @@ Add a prop
   let W = 1280, H = 800, simT = 0, speed = 1, paused = false, showFull = true, pinkUntil = 0;
   let backend = false, selected = null, hover = null, drag = null;
   let night = false, followH = null, tourTimer = 0, tourIdx = 0, lowQ = false, slowFrames = 0;
-  const TOUR = ['R-101', 'L-105', 'consult', 'T-302', 'T-303', 'S-120', 'P-110', 'M-130', 'f2'];
+  const TOUR = ['R-101', 'L-105', 'consult', 'T-302', 'T-303', 'S-120', 'W-112', 'P-110', 'M-130', 'f2'];
   const actors = [];
   const PROPS = [];
   const termLines = [];
@@ -251,12 +251,13 @@ Add a prop
     { id:'T-304', short:'T-304', name:'Treatment bay T-304', gx:29.2, gy:23.8, gw:5.5, gh:4, z:0, shell:false, label:true },
     { id:'S-120', short:'Sterile', name:'Sterilisation & Equipment', gx:11, gy:21, gw:11, gh:7, z:0, floor:'#f3f9ff', grid:'#d6ebff', wall:COL.sky, shell:true },
     { id:'L-105', short:'Waiting', name:'Waiting Lounge', gx:28, gy:11, gw:7, gh:7, z:0, floor:'#fff5f7', grid:'#f8d0da', wall:COL.rose, shell:true },
-    { id:'D-108', short:'Lockers', name:'Changing Rooms', gx:2, gy:20, gw:8, gh:8, z:0, floor:'#f3fbf7', grid:'#d7f3e6', wall:COL.mint, shell:true },
+    { id:'W-112', short:'Restroom', name:'Beauty Restroom', gx:2, gy:20, gw:4, gh:8, z:0, floor:'#fff7fa', grid:'#f6dce5', wall:COL.blush, shell:true },
+    { id:'D-108', short:'Lockers', name:'Changing Rooms', gx:6, gy:20, gw:4, gh:8, z:0, floor:'#f3fbf7', grid:'#d7f3e6', wall:COL.mint, shell:true },
     { id:'B-402', short:'Board', name:'Executive Boardroom', gx:2, gy:1, gw:10, gh:7, z:92, floor:'#f3f9ff', grid:'#d6ebff', wall:COL.sky, shell:true },
     { id:'N-401', short:'Ops', name:'Clinic Operations', gx:12, gy:1, gw:11, gh:7, z:92, floor:'#fff9ee', grid:'#f8e7bf', wall:COL.gold, shell:true }
   ];
 
-  const DOORS = [[22,10],[23,10],[25,10],[26,10],[6,20],[7,20],[16,21],[17,21],[26,19],[27,19],[30,6],[11,7],[12,7]];
+  const DOORS = [[22,10],[23,10],[25,10],[26,10],[3,20],[7,20],[16,21],[17,21],[26,19],[27,19],[30,6],[11,7],[12,7]];
   const PLAYBOOKS = {
     reception: {
       code: 'def check_in_patient(queue):\n    card = read_member_card()\n    slot = next_open_consult()\n    print_wristband(card)\n    return call_to(slot)',
@@ -405,7 +406,7 @@ Add a prop
       lay:'Zoe cuts the journal stories from the boardroom and schedules them after a physician reads the line.',
       tech:['Inputs: approved stills','Systems: content desk','SLA: physician read-through','Output: scheduled post'],
       quotes:['Cutting the journal clip.','Waiting on a read-through.','It goes out this evening.'] },
-    { handle:'@facilities_ben', name:'Ben Siregar', role:'Facilities', group:'Facilities', roleKey:'facilities', home:[4.6,23.4,0], room:'D-108', uniform:COL.sage, hair:'#3f3f46', skin:'#c98b62', acc:'cap',
+    { handle:'@facilities_ben', name:'Ben Siregar', role:'Facilities', group:'Facilities', roleKey:'facilities', home:[8.2,23.4,0], room:'D-108', uniform:COL.sage, hair:'#3f3f46', skin:'#c98b62', acc:'cap',
       lay:'Ben walks every room: sanitiser, linen, lights, and the fire exit. His home base is the locker room.',
       tech:['Inputs: round checklist','Systems: whole clinic','SLA: full round each hour','Output: closed checklist'],
       quotes:['Sanitiser topped up.','On my round.','Exit sign is lit.'] },
@@ -427,7 +428,8 @@ Add a prop
     treat: [29, 23.5, 0, 1.15],
     'S-120': [16.5, 24.5, 0, 1.3],
     'L-105': [31.5, 14.5, 0, 1.45],
-    'D-108': [6, 24, 0, 1.4],
+    'W-112': [4, 24, 0, 1.55],
+    'D-108': [8, 24, 0, 1.55],
     'T-301': [26, 21.5, 0, 1.6],
     'T-302': [32, 21.5, 0, 1.6],
     'T-303': [26, 25.5, 0, 1.6],
@@ -585,7 +587,6 @@ Add a prop
     addBox(15.2, 15.3, 0.7, 0.7, 2.4, '#ffffff', 0);
     addBox(18.2, 15.3, 0.7, 0.7, 2.4, '#ffffff', 0);
     bigTV(19.9, 10.35, 12, 2.6, 'Welcome to SKINDERMA');
-    add({ type:'queue', gx: 12.4, gy: 10.45, z: 18 });
     add({ type:'clock', gx: 17.2, gy: 10.4, z: 22 });
     add({ type:'logo', gx: 15.2, gy: 10.35, z: 24 });
     addBox(24.8, 16.6, 0.8, 0.8, 7, '#ffffff', 0, '#e2e8f0', COL.sky);
@@ -650,14 +651,7 @@ Add a prop
     waitingLounge();
     pendant(31, 13.2, 0); pendant(33.5, 15, 0);
 
-    for (let i = 0; i < 6; i++) addBox(2.5 + (i % 3) * 0.7, 20.6 + Math.floor(i / 3) * 0.7, 0.55, 0.5, 8, [COL.mint, COL.blush, COL.sky, COL.gold, COL.lav, '#fff'][i], 0);
-    addBox(2.6, 22.6, 2.2, 0.45, 3, '#ffffff', 0);
-    add({ type:'mirror', gx: 6.4, gy: 20.5, z: 8 });
-    sofa(5.4, 23.4, 1.8, COL.blush, '#fff', 0, false);
-    addBox(5.6, 24.6, 0.7, 0.55, 2.4, '#ffffff', 0);
-    addBox(7.4, 24.8, 0.5, 1.2, 6, '#ffffff', 0);
-    planter(7.6, 26.4, 0);
-    sanitiser(2.6, 26.6, 0);
+    restroomAndLockers();
 
     addBox(3.2, 3.2, 6.4, 1.15, 6, '#ffffff', 92);
     for (let i = 0; i < 5; i++) chair(3.6 + i, 4.5, 92, i % 2 ? COL.sky : '#fff', false);
@@ -685,7 +679,7 @@ Add a prop
     seats['@manager_suwandi'] = { x: 20.0, y: 5.8, z: 92 };
     planter(21.4, 6.2, 92); planter(12.5, 6.3, 92);
     for (let i = 0; i < 4; i++) pendant(14 + i * 1.8, 3.2, 92);
-    add({ type:'stairs', gx: 10.6, gy: 5.8, z: 0 });
+    add({ type:'lift', gx: 10.35, gy: 5.55, z: 0 });
 
     dressClinic();
 
@@ -783,12 +777,12 @@ Add a prop
     // Mini kitchen and refreshments
     addBox(3.4, 10.3, 4.5, 0.75, 6, wood, 0, woodL, woodR);
     addBox(3.35, 10.25, 4.6, 0.85, 0.7, '#ffffff', 6, '#e9e4d8', '#d6cfbf');
-    device('coffee', 3.7, 10.5, 6.7);
+    device('coffee', 3.7, 10.5, 6.7, 'Coffee');
     device('fruit', 4.9, 10.5, 6.7);
     device('snacks', 5.9, 10.55, 6.7);
-    addBox(6.9, 10.5, 0.62, 0.45, 2.6, '#475569', 6.7, '#334155', '#1e293b');
+    device('microwave', 6.75, 10.42, 6.7, 'Microwave');
     addBox(5.6, 10.2, 2.4, 0.36, 4, wood, 13, woodL, woodR);
-    device('fridge', 8.3, 10.3, 0);
+    device('fridge', 8.2, 10.25, 0, 'Fridge');
     addBox(2.45, 11.7, 0.45, 0.45, 10, '#f8fafc', 0, '#e2e8f0', COL.sky);
     addBox(2.5, 11.75, 0.35, 0.35, 3.5, '#bfe3ff', 10, '#a6d4f7', '#8cc4ee');
     addBox(4.2, 12.3, 3.4, 1.1, 6, wood, 0, woodL, woodR);
@@ -839,6 +833,45 @@ Add a prop
     addBox(33.2, 16.9, 0.4, 0.4, 9, '#f8fafc', 0, '#e2e8f0', COL.sky);
     addBox(33.25, 16.95, 0.3, 0.3, 3, '#bfe3ff', 9, '#a6d4f7', '#8cc4ee');
   }
+  function restroomAndLockers() {
+    // Beauty restroom: two private cubicles, one accessible, and a double vanity.
+    addBox(3.92, 20.55, 0.12, 3.45, 18, '#fffdfb', 0, '#f2e8e5', '#eadbd7');
+    addBox(2.25, 23.85, 1.5, 0.12, 18, '#fffdfb', 0, '#f2e8e5', '#eadbd7');
+    addBox(4.12, 23.85, 1.5, 0.12, 18, '#fffdfb', 0, '#f2e8e5', '#eadbd7');
+    addBox(3.15, 23.78, 0.16, 0.22, 2.2, '#C4A265', 12);
+    addBox(5.02, 23.78, 0.16, 0.22, 2.2, '#C4A265', 12);
+    add({ type:'restroom', kind:'toilet', gx:2.65, gy:21.2, z:0 });
+    add({ type:'restroom', kind:'toilet', gx:4.45, gy:21.2, z:0 });
+    add({ type:'restroom', kind:'grab', gx:5.42, gy:21.05, z:5 });
+    add({ type:'restroom', kind:'tissue', gx:3.55, gy:21.2, z:5 });
+    add({ type:'restroom', kind:'tissue', gx:5.38, gy:22.2, z:5 });
+    addBox(2.4, 25.0, 3.1, 0.75, 6, '#f2e8e5', 0, '#e7d8d3', '#d8c6bf');
+    addBox(2.32, 24.92, 3.25, 0.9, 0.75, '#ffffff', 6, '#ece7df', '#ddd5c8');
+    add({ type:'restroom', kind:'sink', gx:2.75, gy:25.18, z:6.8 });
+    add({ type:'restroom', kind:'sink', gx:4.35, gy:25.18, z:6.8 });
+    add({ type:'restroom', kind:'mirror', gx:2.55, gy:24.98, z:10 });
+    add({ type:'restroom', kind:'mirror', gx:4.15, gy:24.98, z:10 });
+    addBox(5.3, 26.2, 0.42, 0.42, 4.6, '#fff3f6', 0, '#f7dce4', '#efc7d2');
+    addBox(5.37, 26.27, 0.28, 0.28, 1.2, '#c9a86a', 4.6);
+    add({ type:'art', gx:2.25, gy:20.35, z:16, c1:'#fdecef', c2:'#dcefe6' });
+    sanitiser(2.35, 27.0, 0);
+    pendant(3.1, 25.7, 0); pendant(5.0, 25.7, 0);
+
+    // Changing room: closed lockers, illuminated mirror, linen bench and hamper.
+    for (let i = 0; i < 4; i++) {
+      addBox(6.35 + i * 0.78, 20.55, 0.68, 0.58, 11, i % 2 ? '#eef6f2' : '#ffffff', 0, '#dce9e2', '#c7d9cf');
+      addBox(6.88 + i * 0.78, 20.7, 0.04, 0.05, 1.2, '#C4A265', 5);
+    }
+    addBox(6.7, 23.1, 2.55, 0.75, 3, '#f6efe0', 0, '#e8dfc9', '#d8ccb0');
+    addBox(6.85, 23.22, 2.25, 0.5, 0.65, '#dcefe6', 3);
+    addBox(6.45, 25.0, 2.5, 0.62, 6, '#ffffff', 0, '#e2e8f0', '#cbd5e1');
+    add({ type:'restroom', kind:'mirrorWide', gx:6.55, gy:25.05, z:9 });
+    addBox(9.15, 24.8, 0.55, 0.72, 4.2, '#f3e8dc', 0, '#e6d7c7', '#d7c4af');
+    addBox(9.22, 24.9, 0.4, 0.48, 0.5, '#ffffff', 4.2);
+    addBox(6.5, 26.4, 0.7, 0.55, 5.5, '#ffffff', 0, '#e2e8f0', COL.mint);
+    sanitiser(9.4, 27.0, 0);
+    pendant(8.0, 24.0, 0);
+  }
   function medicalDevices() {
     [[23.7, 20.7], [29.7, 20.7], [23.7, 24.7], [29.7, 24.7]].forEach(([x, y]) => device('lamp', x, y, 0));
     device('hifu', 32.5, 20.6, 0, 'HIFU');
@@ -852,11 +885,11 @@ Add a prop
     device('kiosk', 21.7, 12.4, 0, 'Check-in kiosk');
     device('crash', 22.0, 18.1, 0, 'Crash cart');
   }
-  function stairCell(x, y) { return x >= 11 && x <= 12 && y >= 6 && y <= 8; }
+  function liftCell(x, y) { return x >= 11 && x <= 12 && y >= 6 && y <= 8; }
   function walkable(x, y, z) {
     if (DOORS.some((d) => d[0] === x && d[1] === y) && z === 0) return true;
     if (z >= 40) {
-      if (stairCell(x, y)) return true;
+      if (liftCell(x, y)) return true;
       return ROOMS.some((r) => r.z === 92 && r.shell && x > r.gx && x < r.gx + r.gw - 1 && y > r.gy && y < r.gy + r.gh - 1);
     }
     if (x < 1 || y < 1 || x > 36 || y > 28) return false;
@@ -907,7 +940,7 @@ Add a prop
       }
       const neigh = [[1,0],[ -1,0],[0,1],[0,-1]].map(([dx, dy]) => ({ x: cur.x + dx, y: cur.y + dy, z: cur.z }))
         .filter((n) => walkable(n.x, n.y, n.z));
-      if (stairCell(cur.x, cur.y)) neigh.push({ x: cur.x, y: cur.y, z: cur.z === 0 ? 92 : 0 });
+      if (liftCell(cur.x, cur.y)) neigh.push({ x: cur.x, y: cur.y, z: cur.z === 0 ? 92 : 0 });
       for (const n of neigh) {
         const nk = key(n);
         const ng = g[ck] + (n.z !== cur.z ? 2 : 1);
@@ -924,7 +957,7 @@ Add a prop
       if ((r.z || 0) !== zf) continue;
       if (gx >= r.gx && gx < r.gx + r.gw && gy >= r.gy && gy < r.gy + r.gh) hit = r;
     }
-    if (zf === 0 && stairCell(Math.round(gx), Math.round(gy))) return { short:'Stairs', name:'Staircase' };
+    if (zf === 0 && liftCell(Math.round(gx), Math.round(gy))) return { short:'Lift', name:'Medical Lift' };
     return hit || { short: zf ? '2F hall' : 'Corridor', name: 'Corridor' };
   }
   function log(a, text) {
@@ -1129,6 +1162,41 @@ Add a prop
   function drawProp(p, t) {
     if (p.type === 'box') { box(p.gx, p.gy, p.gw, p.gh, p.h, p.top, p.left, p.right, p.stroke, p.z); return; }
     if (p.type === 'chair') { drawChair(p); return; }
+    if (p.type === 'restroom') {
+      const z = p.z || 0, zm = view.zoom;
+      if (p.kind === 'toilet') {
+        box(p.gx + 0.08, p.gy, 0.55, 0.28, 6.2, '#ffffff', '#ece8e1', '#d8d3ca', null, z);
+        box(p.gx, p.gy + 0.22, 0.72, 0.78, 2.3, '#ffffff', '#ece8e1', '#d8d3ca', null, z);
+        const o = iso(p.gx + 0.36, p.gy + 0.62, z + 2.5);
+        ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = Math.max(1, zm);
+        ctx.beginPath(); ctx.ellipse(o.x, o.y, 8 * zm, 4.5 * zm, 0.38, 0, 7); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#dff4f7'; ctx.beginPath(); ctx.ellipse(o.x, o.y, 4.8 * zm, 2.4 * zm, 0.38, 0, 7); ctx.fill();
+      } else if (p.kind === 'sink') {
+        const o = iso(p.gx + 0.32, p.gy + 0.25, z);
+        ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = Math.max(1, zm);
+        ctx.beginPath(); ctx.ellipse(o.x, o.y, 8 * zm, 4 * zm, 0.35, 0, 7); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = Math.max(1.2, 1.5 * zm);
+        ctx.beginPath(); ctx.moveTo(o.x, o.y - 5 * zm); ctx.quadraticCurveTo(o.x + 3 * zm, o.y - 10 * zm, o.x + 6 * zm, o.y - 4 * zm); ctx.stroke();
+      } else if (p.kind === 'mirror' || p.kind === 'mirrorWide') {
+        const wide = p.kind === 'mirrorWide';
+        const o = iso(p.gx, p.gy, z);
+        const w = (wide ? 38 : 20) * zm, h = (wide ? 17 : 24) * zm;
+        const g = ctx.createLinearGradient(o.x, o.y - h, o.x + w, o.y);
+        g.addColorStop(0, '#f8fdff'); g.addColorStop(0.48, '#dceef4'); g.addColorStop(0.52, '#ffffff'); g.addColorStop(1, '#e9f3f5');
+        ctx.fillStyle = g; ctx.strokeStyle = '#C4A265'; ctx.lineWidth = Math.max(1, 1.2 * zm);
+        ctx.beginPath(); ctx.roundRect(o.x, o.y - h, w, h, wide ? 4 * zm : 9 * zm); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,.65)'; ctx.fillRect(o.x + 4 * zm, o.y - h + 3 * zm, 2 * zm, h - 6 * zm);
+      } else if (p.kind === 'grab') {
+        const a = iso(p.gx, p.gy, z), b = iso(p.gx, p.gy + 0.65, z);
+        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = Math.max(2, 2.4 * zm);
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(b.x, b.y - 8 * zm); ctx.stroke();
+      } else if (p.kind === 'tissue') {
+        box(p.gx, p.gy, 0.2, 0.16, 2.2, '#ffffff', '#e2e8f0', '#cbd5e1', null, z);
+        const o = iso(p.gx + 0.1, p.gy + 0.17, z + 0.8);
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(o.x, o.y, 4 * zm, 6 * zm);
+      }
+      return;
+    }
     if (p.type === 'foliage') {
       const o = iso(p.gx, p.gy, p.z), z = view.zoom;
       const blades = [[-5, -15, '#4f8a6d'], [-2, -21, '#5f9d7d'], [1, -24, '#4f8a6d'], [4, -18, '#6faa8a'], [7, -13, '#5f9d7d']];
@@ -1165,14 +1233,6 @@ Add a prop
     }
     if (p.type === 'tv') {
       drawWallScreen(p.gx, p.gy, p.z, 1.15, TV_MENU[Math.floor(t / 4) % TV_MENU.length], null);
-      return;
-    }
-    if (p.type === 'queue') {
-      const o = iso(p.gx, p.gy, p.z);
-      ctx.fillStyle = '#0f172a'; round(o.x, o.y, 54 * view.zoom, 28 * view.zoom, 4);
-      ctx.fillStyle = COL.gold; ctx.font = '700 ' + Math.max(10, 13 * view.zoom) + 'px sans-serif';
-      const num = 'A' + String(120 + Math.floor(t / 7) % 80).padStart(3, '0');
-      ctx.fillText(num, o.x + 8, o.y + 18 * view.zoom);
       return;
     }
     if (p.type === 'clock') {
@@ -1241,8 +1301,19 @@ Add a prop
       ctx.restore();
       return;
     }
-    if (p.type === 'stairs') {
-      for (let i = 0; i < 8; i++) box(10.7, 6.0 + i * 0.35, 1.5, 0.32, 1 + i * 1.2, '#ffffff', '#e2e8f0', '#cbd5e1', null, i * 11);
+    if (p.type === 'lift') {
+      const x = p.gx, y = p.gy, z = p.z || 0;
+      box(x, y, 2.45, 2.3, 92, '#f8fafc', '#e9eef2', '#d7e0e8', '#b8c4ce', z);
+      [2, 72].forEach((level) => {
+        box(x + 0.24, y + 2.22, 0.92, 0.08, 18, '#dbe5ec', '#c7d3dd', '#aebdca', null, z + level);
+        box(x + 1.18, y + 2.22, 0.92, 0.08, 18, '#dbe5ec', '#c7d3dd', '#aebdca', null, z + level);
+        box(x + 1.15, y + 2.19, 0.04, 0.04, 18, '#94a3b8', '#7b8aa0', '#64748b', null, z + level);
+        box(x + 2.15, y + 2.0, 0.16, 0.12, 3.5, '#334155', '#1e293b', '#0f172a', null, z + level + 7);
+        const light = iso(x + 2.25, y + 2.08, z + level + 9.5);
+        ctx.fillStyle = level === 72 ? COL.gold : COL.sage;
+        ctx.beginPath(); ctx.arc(light.x, light.y, 1.8 * view.zoom, 0, 7); ctx.fill();
+      });
+      box(x - 0.08, y - 0.08, 2.61, 2.46, 1.2, '#ffffff', '#e2e8f0', '#cbd5e1', null, z + 92);
       return;
     }
   }
@@ -1356,12 +1427,21 @@ Add a prop
       box(x, y, 0.36, 0.3, 8, W1, L1, R1, null, z);
       miniScreen(x + 0.02, y + 0.02, z + 13, 10, 7, 6);
       lift = 18;
+    } else if (k === 'microwave') {
+      box(x, y, 0.78, 0.48, 3.4, '#eef2f6', '#dbe3ea', '#bac7d2', null, z);
+      box(x + 0.08, y + 0.45, 0.5, 0.04, 2.35, '#243044', '#1e293b', '#0f172a', null, z + 0.5);
+      box(x + 0.63, y + 0.42, 0.08, 0.05, 0.8, '#334155', '#1e293b', '#0f172a', null, z + 1.8);
+      const o = iso(x + 0.67, y + 0.47, z + 2.9);
+      ctx.fillStyle = COL.sage; ctx.beginPath(); ctx.arc(o.x, o.y, 1.5 * zm, 0, 7); ctx.fill();
+      lift = 9;
     } else if (k === 'coffee') {
-      box(x, y, 0.55, 0.4, 3.2, '#334155', '#1e293b', '#0f172a', null, z);
-      box(x + 0.08, y + 0.05, 0.12, 0.12, 0.6, '#ffffff', '#e2e8f0', '#cbd5e1', null, z + 0.2);
-      const o = iso(x + 0.45, y + 0.12, z + 2.4);
-      ctx.fillStyle = (Math.floor(t) % 2) ? '#E85D75' : '#7ED3B2'; ctx.beginPath(); ctx.arc(o.x, o.y, 1.4 * zm, 0, 7); ctx.fill();
-      lift = 8;
+      box(x, y, 0.65, 0.48, 4.2, '#334155', '#1e293b', '#0f172a', null, z);
+      box(x + 0.08, y + 0.06, 0.18, 0.18, 1.1, '#ffffff', '#e2e8f0', '#cbd5e1', null, z + 0.15);
+      box(x + 0.4, y + 0.08, 0.12, 0.12, 1.8, '#cbd5e1', '#94a3b8', '#64748b', null, z + 1.4);
+      box(x + 0.12, y + 0.08, 0.42, 0.28, 0.5, '#64748b', '#475569', '#334155', null, z + 4.2);
+      const o = iso(x + 0.5, y + 0.12, z + 3.2);
+      ctx.fillStyle = (Math.floor(t) % 2) ? COL.gold : COL.sage; ctx.beginPath(); ctx.arc(o.x, o.y, 1.5 * zm, 0, 7); ctx.fill();
+      lift = 10;
     } else if (k === 'fruit') {
       const o = iso(x + 0.3, y + 0.3, z + 1);
       ctx.fillStyle = '#e8e2d3'; ctx.beginPath(); ctx.ellipse(o.x, o.y, 8 * zm, 3.4 * zm, 0, 0, 7); ctx.fill();
@@ -1383,9 +1463,14 @@ Add a prop
       }
       lift = 20;
     } else if (k === 'fridge') {
-      box(x, y, 0.9, 0.8, 13, '#eef2f6', '#dde4ec', '#c4cfdb', null, z);
-      box(x + 0.82, y + 0.1, 0.04, 0.04, 5, '#94a3b8', '#7b8aa0', '#64748b', null, z + 4);
-      lift = 22;
+      box(x, y, 1.1, 0.86, 14, '#f7f9fb', '#dfe6ec', '#c3cdd6', null, z);
+      box(x + 0.53, y + 0.8, 0.04, 0.05, 13.2, '#b7c4cf', '#9fadb9', '#8797a5', null, z + 0.4);
+      box(x + 0.42, y + 0.81, 0.05, 0.05, 5.2, '#94a3b8', '#7b8aa0', '#64748b', null, z + 5.2);
+      box(x + 0.64, y + 0.81, 0.05, 0.05, 5.2, '#94a3b8', '#7b8aa0', '#64748b', null, z + 5.2);
+      box(x + 0.72, y + 0.78, 0.22, 0.05, 1.8, '#243044', '#1e293b', '#0f172a', null, z + 10.2);
+      const o = iso(x + 0.84, y + 0.84, z + 11.4);
+      ctx.fillStyle = '#8EC5FF'; ctx.fillRect(o.x, o.y, 3.5 * zm, 1.5 * zm);
+      lift = 23;
     }
     deviceChip(p, lift);
   }
@@ -1404,20 +1489,7 @@ Add a prop
     const cx = (a.x + c.x) / 2, cy = (a.y + c.y) / 2;
     ctx.fillStyle = 'rgba(255,255,255,.55)';
     ctx.beginPath(); ctx.ellipse(cx + Math.sin(t * 0.5) * 6 * zm, cy, 12 * zm, 5 * zm, -0.25, 0, 7); ctx.fill();
-    if (zm >= 1.18) {
-      const label = [p.title, 'Glow facials', 'Sun care tips'][scene];
-      ctx.font = '700 ' + Math.max(8, 9.5 * Math.min(zm, 1.3)) + 'px sans-serif';
-      const tw = ctx.measureText(label).width;
-      ctx.fillStyle = '#2c3a32';
-      ctx.fillText(label, cx - tw / 2, cy + 3.5 * zm);
-    }
     ctx.restore();
-  }
-  function clipText(text, maxW) {
-    if (ctx.measureText(text).width <= maxW) return text;
-    let s = text;
-    while (s.length > 1 && ctx.measureText(s + '…').width > maxW) s = s.slice(0, -1);
-    return s + '…';
   }
   function drawWallScreen(gx, gy, z, tiles, caption, bars) {
     const sc = Math.min(view.zoom, 1.2);
@@ -1437,13 +1509,6 @@ Add a prop
         const bh = (4 + Math.sin(simT + i) * 1.5) * sc;
         ctx.fillRect(x + 4 + i * (w / 5), y + h - 3 - bh, Math.max(2, w / 8), bh);
       }
-    }
-    if (caption && view.zoom >= 1.18) {
-      ctx.fillStyle = '#3f4a3c';
-      ctx.font = '600 ' + Math.max(7, 8 * sc) + 'px sans-serif';
-      const shown = clipText(caption, w - 8);
-      const tw = ctx.measureText(shown).width;
-      ctx.fillText(shown, x + (w - tw) / 2, y + (bars ? 8 * sc : h * 0.72));
     }
     ctx.restore();
   }
@@ -1940,6 +2005,7 @@ Add a prop
     'T-304': 'Bay T-304 — LED light therapy panel, and Kai floats the mobile laser here.',
     'S-120': 'Sterilisation: autoclave row, ultrasonic cleaner, UV cabinet, and the chilled serum fridge at 4.2 C.',
     'L-105': 'Waiting lounge with a big TV, comfortable seating, tea, and snacks while you wait. Ivy also covers aftercare here.',
+    'W-112': 'A beauty restroom with two private cubicles, an accessible toilet and grab rail, double vanity, illuminated mirrors, touch-free soap and warm blush detailing.',
     'D-108': 'Changing rooms and lockers with fresh linen before every bay.',
     'B-402': 'Boardroom for case reviews and brand checks. No filters on real results.',
     'N-401': 'Operations wall watches every room and keeps waits under 12 minutes.'
@@ -1996,7 +2062,7 @@ Add a prop
     const buttons = [
       ['full','Full Clinic'], ['yeyen','dr. Yeyen'], ['hengki','dr. Hengki'], ['f2','2F Boardroom & Ops'], ['R-101','1F Reception'],
       ['consult','1F Consultations'], ['treat','1F Treatment Suites'], ['L-105','1F Waiting Lounge'],
-      ['P-110','1F Mini Kitchen'], ['M-130','1F Meeting Room'], ['S-120','1F Sterilisation'], ['D-108','1F Lockers']
+      ['P-110','1F Mini Kitchen'], ['M-130','1F Meeting Room'], ['S-120','1F Sterilisation'], ['W-112','1F Restroom'], ['D-108','1F Lockers']
     ];
     tools.innerHTML = buttons.map(([k, label]) => '<button type="button" data-focus="' + k + '">' + label + '</button>').join('')
       + '<button type="button" id="tour">Tour</button>'
