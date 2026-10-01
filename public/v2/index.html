@@ -118,6 +118,8 @@ Add a prop
     .book-card strong { font-size:12px; }
     .book-actions { flex:none; }
     .book-actions a { padding:7px 12px; }
+    #toast { bottom:calc(104px + env(safe-area-inset-bottom)); }
+    #onboard { bottom:calc(156px + env(safe-area-inset-bottom)); }
     .drawer {
       top:auto; left:0; right:0; width:100%; height:min(68dvh, 560px);
       bottom:calc(36px + env(safe-area-inset-bottom));
@@ -128,6 +130,22 @@ Add a prop
     .drawer.open { transform:translateY(0); }
     .avatar { width:56px; height:56px; }
     .term input { font-size:16px; }
+    #onboard { position:fixed; z-index:9; left:50%; transform:translateX(-50%); bottom:calc(96px + env(safe-area-inset-bottom));
+      width:min(430px, calc(100% - 24px)); display:none; padding:12px 12px 10px; text-align:left; }
+    #onboard.show { display:block; }
+    #onboard strong { display:block; font-size:13px; color:#2c3a32; }
+    #onboard p { margin:4px 0 10px; font-size:12.5px; color:#6d7468; line-height:1.45; }
+    #onboard .rowbtns { margin:0; }
+    #toast { position:fixed; z-index:9; left:50%; transform:translateX(-50%) translateY(8px); bottom:calc(48px + env(safe-area-inset-bottom));
+      background:#2c3a32; color:#fff; font-size:12.5px; padding:9px 14px; border-radius:99px; opacity:0; pointer-events:none;
+      transition:opacity .25s, transform .25s; max-width:calc(100% - 24px); text-align:center; }
+    #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    .book-card .meta { display:flex; align-items:center; gap:6px; margin-top:6px; font-size:11px; color:#8a6a12; }
+    .book-card .meta i { font-style:normal; color:#C4A265; letter-spacing:1px; }
+    body.night canvas { filter:saturate(.92) brightness(.94); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .marquee span { animation:none; }
   }
   @media (pointer: coarse) {
     #tools button, .status, .tabs button, .rowbtns button, .closebtn { min-height:40px; }
@@ -149,13 +167,20 @@ Add a prop
 <aside class="book-card">
   <div>
     <strong>Book with us</strong>
-    <p>The same consultation as the patient app.</p>
+    <p>Real doctors, real clinic. Same booking as the patient app.</p>
+    <div class="meta"><i>★★★★★</i><span>Loved by patients · Open daily 10–8</span></div>
   </div>
   <div class="book-actions">
     <a class="app" href="/">Patient app</a>
     <a class="wa" href="https://wa.me/6281261884912?text=Hello%20SKINDERMA%2C%20I%20would%20like%20to%20book%20a%20consultation." target="_blank" rel="noopener">WhatsApp</a>
   </div>
 </aside>
+<div id="toast"></div>
+<section id="onboard" class="glass">
+  <strong>Welcome to the SKINDERMA clinic demo</strong>
+  <p>Drag to look around · pinch or scroll to zoom · tap any doctor, nurse, or room to open their card. Try the tour, the rush, or Code Pink.</p>
+  <div class="rowbtns"><button class="primary" type="button" id="on-tour">Take the tour</button><button type="button" id="on-go">Explore myself</button></div>
+</section>
 <div class="ticker">
   <b id="clockline">SKINDERMA · 2 floors</b>
   <div class="marquee"><span id="tick"></span></div>
@@ -183,7 +208,7 @@ Add a prop
 (() => {
   const TW = 28, TH = 14;
   const canvas = document.getElementById('c');
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { alpha: false });
   if (!CanvasRenderingContext2D.prototype.roundRect) {
     CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
       const radius = Math.min(r || 0, w / 2, h / 2);
@@ -198,6 +223,8 @@ Add a prop
   const view = { x: 700, y: 280, zoom: 0.78, tx: 700, ty: 280, tz: 0.78, glide: true };
   let W = 1280, H = 800, simT = 0, speed = 1, paused = false, showFull = true, pinkUntil = 0;
   let backend = false, selected = null, hover = null, drag = null;
+  let night = false, followH = null, tourTimer = 0, tourIdx = 0, lowQ = false, slowFrames = 0;
+  const TOUR = ['R-101', 'consult', 'treat', 'S-120', 'L-105', 'f2'];
   const actors = [];
   const PROPS = [];
   const termLines = [];
@@ -504,8 +531,14 @@ Add a prop
   function autoclave(gx, gy, z, i) { add({ type:'clave', gx, gy, z: z || 0, i }); }
   function laserTower(gx, gy, z, id) { add({ type:'laser', id, gx, gy, z: z || 0, hx: gx, hy: gy }); }
   function treatmentBed(gx, gy, z) {
-    addBox(gx, gy, 1.7, 0.72, 3.2, '#ffffff', z || 0, '#e2e8f0', '#cbd5e1');
-    addBox(gx + 0.15, gy + 0.12, 0.42, 0.42, 1.4, COL.blush, (z || 0) + 3.2);
+    const zz = z || 0;
+    addBox(gx - 0.06, gy - 0.06, 1.85, 0.86, 1.1, '#ddd6c9', zz, '#cfc8b8', '#bfb7a4');
+    addBox(gx, gy, 1.7, 0.72, 3.2, '#ffffff', zz, '#e2e8f0', '#cbd5e1');
+    addBox(gx + 0.08, gy + 0.1, 0.5, 0.5, 1.5, '#f8fafc', zz + 3.2);
+    addBox(gx + 0.72, gy + 0.08, 0.9, 0.56, 1.1, '#dcefe6', zz + 3.2, '#c4e2d4', '#a9d3bf');
+    addBox(gx + 1.62, gy + 0.1, 0.06, 0.52, 4.2, '#cbd5e1', zz + 1, '#b6c2cf', '#9fb0bf');
+    addBox(gx + 0.15, gy + 0.12, 0.42, 0.42, 1.4, COL.blush, zz + 3.2);
+    add({ type:'rail', gx: gx - 0.02, gy: gy + 0.72, z: zz });
   }
   function sanitiser(gx, gy, z) {
     addBox(gx, gy, 0.28, 0.28, 4.5, '#ffffff', z || 0, '#e2e8f0', COL.mint);
@@ -718,6 +751,50 @@ Add a prop
 
     [[10.5, 8.6], [10.5, 19.4], [22.4, 9.4], [27.4, 18.8], [21.6, 20.2], [9.2, 9.2]].forEach(([x, y]) => planter(x, y, 0));
     pendant(16.2, 5.2, 0); pendant(6.2, 5.2, 0); pendant(26.4, 16.2, 0);
+    hospitalDress();
+  }
+  function hospitalDress() {
+    add({ type:'art', gx: 13.0, gy: 10.42, z: 20, c1: '#dcefe6', c2: '#F4A7B9' });
+    add({ type:'art', gx: 18.6, gy: 10.42, z: 20, c1: '#e0f2fe', c2: '#F2C14E' });
+    add({ type:'art', gx: 25.4, gy: 2.32, z: 16, c1: '#e7f6ef', c2: '#8EC5FF' });
+    add({ type:'art', gx: 31.4, gy: 2.32, z: 16, c1: '#fdecef', c2: '#7ED3B2' });
+    add({ type:'art', gx: 29.6, gy: 11.32, z: 16, c1: '#dcefe6', c2: '#B8A1F2' });
+    add({ type:'art', gx: 3.4, gy: 1.32, z: 108, c1: '#e0f2fe', c2: '#5FB382' });
+    for (let i = 0; i < 3; i++) addBox(12.9 + i * 0.55, 18.35, 0.3, 0.3, 1.1 + (i % 2) * 0.5, '#7c3aed', 0);
+    addBox(22.9, 13.2, 1.1, 0.5, 9, '#fff7ed', 0, '#f3e2c7', '#e5cba0');
+    for (let i = 0; i < 4; i++) addBox(23.0 + i * 0.24, 13.3, 0.16, 0.3, 1.4 + (i % 2), ['#F4A7B9', '#F2C14E', '#7ED3B2', '#ffffff'][i], 9);
+    addBox(20.6, 18.6, 0.5, 0.5, 7, '#ffffff', 0, '#e2e8f0', COL.sky);
+    addBox(20.65, 18.65, 0.4, 0.4, 2.2, '#e0f2fe', 7);
+    addBox(12.6, 18.6, 0.45, 0.45, 6, '#f1f8ff', 0, '#dbeafe', '#bcd6f5');
+    addBox(29.0, 17.3, 0.55, 0.4, 7.5, '#ffffff', 0, '#e2e8f0', COL.mint);
+    addBox(29.05, 17.35, 0.45, 0.3, 2.4, '#e0f2fe', 7.5);
+    addBox(33.0, 24.6, 0.5, 0.5, 6, '#fef2f2', 0, '#fecaca', '#f87171');
+    addBox(33.05, 24.65, 0.4, 0.4, 1.6, '#ef4444', 6);
+    addBox(2.9, 19.0, 0.4, 0.4, 5.5, '#fef9c3', 0, '#fde68a', '#f59e0b');
+    addBox(23.5, 19.0, 0.4, 0.35, 4.5, '#fef9c3', 0, '#fde68a', '#f59e0b');
+    addBox(23.4, 20.0, 0.9, 0.5, 3.4, '#f8fafc', 0, '#e2e8f0', '#cbd5e1');
+    for (let i = 0; i < 3; i++) addBox(23.5 + i * 0.26, 20.1, 0.16, 0.3, 1.6, ['#F4A7B9', '#7ED3B2', '#8EC5FF'][i], 3.4);
+    addBox(30.0, 24.0, 0.9, 0.5, 3.4, '#f8fafc', 0, '#e2e8f0', '#cbd5e1');
+    for (let i = 0; i < 3; i++) addBox(30.1 + i * 0.26, 24.1, 0.16, 0.3, 1.6, ['#F2C14E', '#B8A1F2', '#ffffff'][i], 3.4);
+    addBox(12.4, 26.9, 1.6, 0.5, 4.5, '#f8fafc', 0, '#e2e8f0', '#cbd5e1');
+    for (let i = 0; i < 4; i++) addBox(12.55 + i * 0.34, 27.0, 0.24, 0.3, 1.8, i % 2 ? '#dcefe6' : '#ffffff', 4.5);
+    addBox(33.6, 22.9, 0.55, 0.45, 7, '#fef2f2', 0, '#fecaca', '#ef4444');
+    addBox(20.9, 26.8, 0.45, 0.35, 5, '#fee2e2', 0, '#fecaca', '#ef4444');
+    add({ type:'curtain', gx: 23.9, gy: 19.9, gw: 2.6, z: 0, color: '#dcefe6' });
+    add({ type:'curtain', gx: 29.9, gy: 19.9, gw: 2.6, z: 0, color: '#e0f2fe' });
+    add({ type:'curtain', gx: 23.9, gy: 23.9, gw: 2.6, z: 0, color: '#e0f2fe' });
+    add({ type:'curtain', gx: 29.9, gy: 23.9, gw: 2.6, z: 0, color: '#dcefe6' });
+    addBox(11.2, 14.6, 2.6, 0.35, 10, '#ffffff', 0, '#f1ead9', '#e2d9c2');
+    addBox(11.25, 14.65, 2.5, 0.25, 1.2, '#3f7d68', 10);
+    addBox(28.2, 18.6, 0.5, 0.3, 3.2, '#1e293b', 0);
+    add({ type:'monitor', gx: 28.3, gy: 18.55, z: 3.4, seed: 9 });
+    for (let i = 0; i < 4; i++) addBox(12.2 + i * 3.4, 9.55, 0.12, 0.12, 7, '#94a3b8', 0);
+    addBox(30.0, 16.9, 1.1, 0.45, 2.6, '#fff7ed', 0, '#f3e2c7', '#e5cba0');
+    addBox(30.1, 17.0, 0.3, 0.25, 1.1, '#F4A7B9', 2.6);
+    addBox(30.5, 17.0, 0.3, 0.25, 1.1, '#7ED3B2', 2.6);
+    addBox(4.4, 16.6, 0.9, 0.5, 2.2, '#fff7ed', 0);
+    addBox(13.4, 6.6, 1.4, 0.5, 3.4, '#f8fafc', 92, '#e2e8f0', '#cbd5e1');
+    addBox(4.6, 6.7, 0.4, 0.3, 4.5, '#fee2e2', 92, '#fecaca', '#ef4444');
   }
 
   function stairCell(x, y) { return x >= 11 && x <= 12 && y >= 6 && y <= 8; }
@@ -1070,6 +1147,25 @@ Add a prop
       drawWallScreen(p.gx, p.gy, p.z, p.type === 'board' || p.type === 'mirror' ? 0.9 : 1.05, caption, p.type === 'bars');
       return;
     }
+    if (p.type === 'rail') {
+      box(p.gx, p.gy, 0.05, 0.5, 9, '#e8eef4', '#d7e0ea', '#b9c6d4', null, (p.z || 0) + 3);
+      box(p.gx, p.gy, 1.7, 0.05, 9, '#e8eef4', '#d7e0ea', '#b9c6d4', null, (p.z || 0) + 3);
+      return;
+    }
+    if (p.type === 'art') {
+      const o = iso(p.gx, p.gy, p.z);
+      ctx.fillStyle = '#fff'; round(o.x, o.y, 26 * view.zoom, 18 * view.zoom, 2);
+      ctx.fillStyle = p.c1; ctx.fillRect(o.x + 3, o.y + 3, 9 * view.zoom, 12 * view.zoom);
+      ctx.fillStyle = p.c2; ctx.fillRect(o.x + 13 * view.zoom, o.y + 3, 10 * view.zoom, 6 * view.zoom);
+      ctx.fillStyle = '#dcefe6'; ctx.fillRect(o.x + 13 * view.zoom, o.y + 10 * view.zoom, 10 * view.zoom, 5 * view.zoom);
+      return;
+    }
+    if (p.type === 'curtain') {
+      ctx.save(); ctx.globalAlpha *= 0.92;
+      box(p.gx, p.gy, p.gw, 0.07, 20, p.color, shade(p.color, -14), shade(p.color, -26), null, p.z);
+      ctx.restore();
+      return;
+    }
     if (p.type === 'stairs') {
       for (let i = 0; i < 8; i++) box(10.7, 6.0 + i * 0.35, 1.5, 0.32, 1 + i * 1.2, '#ffffff', '#e2e8f0', '#cbd5e1', null, i * 11);
       return;
@@ -1193,6 +1289,11 @@ Add a prop
     if (s.acc === 'cap' || s.acc === 'surgical') { ctx.fillStyle = s.acc === 'surgical' ? '#e7f6ef' : '#C4A265'; ctx.beginPath(); ctx.roundRect(p.x - 6.4 * sc, y - 31 * sc, 12.8 * sc, 4 * sc, 2); ctx.fill(); }
     if (s.acc === 'visor') { ctx.fillStyle = '#8EC5FF'; ctx.fillRect(p.x - 6.5 * sc, y - 25.5 * sc, 13 * sc, 2 * sc); }
     if (s.acc === 'headphones' || s.acc === 'headset') { ctx.strokeStyle = '#334155'; ctx.strokeRect(p.x - 7.2 * sc, y - 26 * sc, 2.4 * sc, 4 * sc); ctx.strokeRect(p.x + 4.8 * sc, y - 26 * sc, 2.4 * sc, 4 * sc); }
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(p.x + 2.6 * sc, y - 14.5 * sc, 3.4 * sc, 2.6 * sc);
+    ctx.fillStyle = '#3f7d68';
+    ctx.fillRect(p.x + 2.6 * sc, y - 14.5 * sc, 3.4 * sc, 0.9 * sc);
+    if (s.acc === 'surgical') { ctx.fillStyle = '#dff3ea'; ctx.fillRect(p.x - 4.6 * sc, y - 23.4 * sc, 9.2 * sc, 3.2 * sc); }
     if (s.vip) {
       ctx.fillStyle = '#C4A265';
       ctx.beginPath();
@@ -1241,10 +1342,12 @@ Add a prop
       floorQuad(1, 1, 35, 28, 0, '#f3ece1', '#e7dfd0');
       ctx.strokeStyle = COL.mint; ctx.globalAlpha *= 0.8;
       [[2, 9.4, 33, 0.08],[10.4, 2, 0.08, 26],[22.4, 10, 0.08, 18]].forEach(([x, y, w, h]) => floorQuad(x, y, w, h, 0.2, COL.sage, null));
-      const dots = (simT * 0.35) % 1;
-      for (let i = 0; i < 5; i++) {
-        const o = iso(4 + ((dots + i / 5) % 1) * 28, 9.5, 0.4);
-        ctx.fillStyle = COL.rose; ctx.beginPath(); ctx.arc(o.x, o.y, 2.2, 0, 7); ctx.fill();
+      if (!lowQ) {
+        const dots = (simT * 0.35) % 1;
+        for (let i = 0; i < 5; i++) {
+          const o = iso(4 + ((dots + i / 5) % 1) * 28, 9.5, 0.4);
+          ctx.fillStyle = COL.rose; ctx.beginPath(); ctx.arc(o.x, o.y, 2.2, 0, 7); ctx.fill();
+        }
       }
       ctx.globalAlpha = alpha;
       [[2.2, 7.8],[10.2, 7.8],[22.6, 7.8]].forEach(([x, y]) => box(x, y, 0.5, 0.5, 120, '#f8fafc', '#e2e8f0', '#cbd5e1', '#94a3b8', 0));
@@ -1282,10 +1385,24 @@ Add a prop
   }
 
   function frame() {
-    ctx.fillStyle = '#f7f3ea';
+    ctx.fillStyle = night ? '#e9e4d8' : '#f7f3ea';
     ctx.fillRect(0, 0, W, H);
     drawFloorLayer(0, 1);
     if (showFull || view.zoom > 0.45) drawFloorLayer(92, showFull ? 1 : 0.18);
+    if (night) {
+      ctx.fillStyle = 'rgba(23,32,48,.26)';
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = 'rgba(242,193,78,.10)';
+      for (let i = 0; i < PROPS.length; i++) {
+        const p = PROPS[i];
+        if (p.type !== 'pendant') continue;
+        const pz = p.z >= 40 ? 92 : 0;
+        if (pz === 92 && !showFull) continue;
+        const o = iso(p.gx, p.gy, (p.z || 0) + 22);
+        if (o.x < -60 || o.y < -60 || o.x > W + 60 || o.y > H + 60) continue;
+        ctx.beginPath(); ctx.arc(o.x, o.y, 34 * view.zoom, 0, 7); ctx.fill();
+      }
+    }
   }
 
   let activeFocus = 'full';
@@ -1312,7 +1429,8 @@ Add a prop
   }
   function resize() {
     const coarse = window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 900;
-    const dpr = Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2);
+    let dpr = Math.min(window.devicePixelRatio || 1, coarse ? 1.25 : 1.75);
+    if (lowQ) dpr = Math.min(dpr, 1);
     const size = viewportSize();
     W = size.w; H = size.h;
     canvas.width = Math.floor(W * dpr); canvas.height = Math.floor(H * dpr);
@@ -1403,7 +1521,8 @@ Add a prop
     const panel = document.getElementById('panel');
     if (s.tab === 'Technical') panel.innerHTML = '<ul>' + s.tech.map((x) => '<li>' + x + '</li>').join('') + '</ul>';
     else if (s.tab === 'Code') panel.innerHTML = '<pre class="code">' + highlight(book.code) + '</pre>';
-    else if (s.tab === 'Run') panel.innerHTML = '<div class="rowbtns"><button class="primary" type="button" id="runbtn">Run task</button><button type="button" id="pantry">Send to pantry</button><button type="button" id="callc">Call to consultation</button><button type="button" id="hand">Hand off to assistant</button></div><div class="runlog" id="runlog">' + (s.runText || '') + '</div>';
+    else if (s.tab === 'Run') panel.innerHTML = '<div class="rowbtns"><button class="primary" type="button" id="runbtn">Run task</button><button type="button" id="follow">'
+      + (followH === s ? 'Unfollow' : 'Follow') + '</button><button type="button" id="pantry">Send to pantry</button><button type="button" id="callc">Call to consultation</button><button type="button" id="hand">Hand off to assistant</button><button type="button" id="bookp">Book via WhatsApp</button></div><div class="runlog" id="runlog">' + (s.runText || '') + '</div>';
     else if (s.tab === 'Log') panel.innerHTML = '<div class="runlog">' + (s.logs.join('\n') || 'No actions yet') + '</div>';
     else panel.innerHTML = '<p>' + s.lay + '</p>';
     document.querySelectorAll('#tabs button').forEach((b) => b.onclick = () => { s.tab = b.dataset.tab; renderDrawer(); });
@@ -1415,6 +1534,18 @@ Add a prop
     if (callc) callc.onclick = () => { goTo(s, 27.2, 7.2, 0, 'BREAK'); s.breakUntil = simT + 10; s.say = 'Called to consultation'; s.sayUntil = simT + 3; log(s, 'Called to C-201'); };
     const hand = document.getElementById('hand');
     if (hand) hand.onclick = () => { openTerm(); document.getElementById('termin').value = 'run ' + s.handle; };
+    const follow = document.getElementById('follow');
+    if (follow) follow.onclick = () => {
+      followH = followH === s ? null : s;
+      toast(followH ? 'Following ' + s.name + ' — drag to release.' : 'Released camera.');
+      renderDrawer();
+    };
+    const bookp = document.getElementById('bookp');
+    if (bookp) bookp.onclick = () => {
+      const url = 'https://wa.me/6281261884912?text=' + encodeURIComponent('Hello SKINDERMA, I would like to book with ' + s.name + ' (' + s.role + ').');
+      toast('Opening WhatsApp to book with ' + s.name + '.');
+      window.open(url, '_blank', 'noopener');
+    };
   }
   function startRun(s) {
     if (s.busy) return;
@@ -1481,6 +1612,10 @@ Add a prop
     if (line === 'resume') { paused = false; speed = speed || 1; printTerm('resumed'); syncSpeed(); return; }
     if (line === 'show2f') { showFull = !showFull; printTerm(showFull ? '2F shown' : '2F cut away'); syncSpeed(); return; }
     if (line === 'codepink') { triggerPink(); printTerm('Code Pink'); return; }
+    if (line === 'tour') { startTour(); printTerm('Tour started'); return; }
+    if (line === 'rush') { morningRush(); printTerm('Morning rush'); return; }
+    if (line === 'vip') { vipVisit(); printTerm('VIP visit'); return; }
+    if (line === 'night') { night = !night; document.body.classList.toggle('night', night); printTerm(night ? 'Night mode' : 'Day mode'); return; }
     let m = line.match(/^speed\s+(\d+(?:\.\d+)?)/);
     if (m) {
       const n = Number(m[1]);
@@ -1508,6 +1643,82 @@ Add a prop
       s.say = m[2]; s.sayUntil = simT + 4; log(s, 'Say: ' + m[2]); printTerm('said'); return;
     }
     printTerm('unknown command — try help');
+  }
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), 2600);
+  }
+  function stopTour() { tourTimer = 0; const b = document.getElementById('tour'); if (b) b.classList.remove('on'); }
+  function startTour() {
+    stopTour();
+    tourIdx = 0;
+    tourTimer = 0.5;
+    document.getElementById('tour').classList.add('on');
+    toast('Tour started — sit back, the camera visits every room.');
+    hideOnboard();
+  }
+  function morningRush() {
+    hideOnboard();
+    for (let i = 0; i < 3; i++) setTimeout(spawnGuest, i * 900);
+    focusKey('R-101');
+    toast('Morning rush — three patients just walked in.');
+  }
+  function vipVisit() {
+    hideOnboard();
+    const y = actors.find((a) => a.handle === '@dr_yeyen');
+    if (y) { selected = y; y.tab = 'Layman'; renderDrawer(); }
+    focusKey('yeyen');
+    toast('VIP round — dr. Yeyen Handoko is reviewing rooms.');
+  }
+  function hideOnboard() {
+    document.getElementById('onboard').classList.remove('show');
+    try { localStorage.setItem('skinderma_v2_seen', '1'); } catch (e) {}
+  }
+  const ROOM_BLURB = {
+    'R-101': 'Check in, queue numbers, and a calm sofa wait. Mia and Jun keep arrivals under 4 minutes.',
+    'C-201': 'dr. Yeyen and dr. Intan map acne, melasma, and texture here before anything is booked.',
+    'C-202': 'dr. Jessica plans energy devices like HIFU with photo mapping first.',
+    'P-110': 'Staff pantry and break corner. Coffee, charts, and a breather between sessions.',
+    'T-300': 'Four private treatment bays with beds, lasers, trolleys, and privacy curtains.',
+    'T-301': 'Treatment bay T-301 — nurse Hana, bed, trolley, and cooling ready.',
+    'T-302': 'Treatment bay T-302 — laser tower with Tomas, test spot logged first.',
+    'T-303': 'Treatment bay T-303 — quiet pigment bay with Priya.',
+    'T-304': 'Treatment bay T-304 — Kai floats the spare laser tower here.',
+    'S-120': 'Sterilisation: autoclave row, UV cabinet, and the chilled serum fridge at 4.2 C.',
+    'L-105': 'Aftercare lounge — Ivy turns the doctor plan into a simple home routine.',
+    'D-108': 'Changing rooms and lockers with fresh linen before every bay.',
+    'B-402': 'Boardroom for case reviews and brand checks. No filters on real results.',
+    'N-401': 'Operations wall watches every room and keeps waits under 12 minutes.'
+  };
+  function openRoomCard(room, sx, sy) {
+    const drawer = document.getElementById('drawer');
+    drawer.classList.add('open');
+    selected = null; followH = null;
+    document.getElementById('d-name').textContent = room.name;
+    document.getElementById('d-role').textContent = room.id + ' · tap a person inside for their card';
+    document.getElementById('d-state').textContent = 'Room · ' + (room.z ? '2F' : '1F');
+    const av = document.getElementById('avatar');
+    const ax = av.getContext('2d');
+    ax.clearRect(0, 0, 144, 144);
+    ax.fillStyle = '#f7f3ea'; ax.fillRect(0, 0, 144, 144);
+    ax.fillStyle = room.wall || '#5FB382'; ax.fillRect(24, 96, 96, 10);
+    ax.fillStyle = '#ffffff'; ax.fillRect(32, 48, 80, 48);
+    ax.strokeStyle = '#e6e0d4'; ax.strokeRect(32, 48, 80, 48);
+    ax.fillStyle = '#3f4a3c'; ax.font = '700 13px sans-serif'; ax.textAlign = 'center';
+    ax.fillText(room.id, 72, 72);
+    ax.font = '11px sans-serif'; ax.fillStyle = '#6d7468';
+    ax.fillText(room.z ? 'Level 2' : 'Level 1', 72, 88);
+    ax.textAlign = 'left';
+    document.getElementById('tabs').innerHTML = '';
+    const url = 'https://wa.me/6281261884912?text=' + encodeURIComponent('Hello SKINDERMA, I would like to book ' + room.name + ' (' + room.id + ').');
+    document.getElementById('panel').innerHTML = '<p>' + (ROOM_BLURB[room.id] || 'A SKINDERMA care space.') + '</p>'
+      + '<div class="rowbtns"><button type="button" id="room-focus">Zoom here</button><button class="primary" type="button" id="room-book">Book this room</button><a href="/" style="align-self:center;font-size:12px;color:#3f7d68;font-weight:700">Patient app</a></div>';
+    document.getElementById('room-focus').onclick = () => focusKey(FOCI[room.id] ? room.id : (room.z ? 'f2' : 'full'));
+    document.getElementById('room-book').onclick = () => { toast('Opening WhatsApp to book ' + room.id + '.'); window.open(url, '_blank', 'noopener'); };
   }
   function triggerPink() {
     pinkUntil = simT + 12;
@@ -1538,12 +1749,25 @@ Add a prop
       ['S-120','1F Sterilisation'], ['L-105','1F Patient Lounge'], ['D-108','1F Lockers']
     ];
     tools.innerHTML = buttons.map(([k, label]) => '<button type="button" data-focus="' + k + '">' + label + '</button>').join('')
+      + '<button type="button" id="tour">Tour</button>'
+      + '<button type="button" id="rush">Morning rush</button>'
+      + '<button type="button" id="vip">VIP visit</button>'
+      + '<button type="button" id="night">Night</button>'
       + '<button type="button" id="cut2">Cut away 2F</button>'
       + '<button type="button" data-speed="pause">Pause</button><button type="button" data-speed="1">1x</button><button type="button" data-speed="2">2x</button><button type="button" data-speed="5">5x</button>'
       + '<button type="button" class="danger" id="pink">Trigger Code Pink</button>'
       + '<button type="button" id="termbtn">Terminal</button>'
       + '<span class="status" id="status">Static preview — backend offline</span>';
-    tools.querySelectorAll('[data-focus]').forEach((b) => b.onclick = () => focusKey(b.dataset.focus));
+    tools.querySelectorAll('[data-focus]').forEach((b) => b.onclick = () => { stopTour(); focusKey(b.dataset.focus); });
+    document.getElementById('tour').onclick = startTour;
+    document.getElementById('rush').onclick = morningRush;
+    document.getElementById('vip').onclick = vipVisit;
+    document.getElementById('night').onclick = (e) => {
+      night = !night;
+      document.body.classList.toggle('night', night);
+      e.target.classList.toggle('on', night);
+      toast(night ? 'Evening mode — warm lamps on.' : 'Day mode — full daylight.');
+    };
     document.getElementById('cut2').onclick = () => { showFull = !showFull; syncSpeed(); };
     tools.querySelectorAll('[data-speed]').forEach((b) => b.onclick = () => {
       if (b.dataset.speed === 'pause') { paused = !paused; if (!paused && !speed) speed = 1; }
@@ -1571,6 +1795,13 @@ Add a prop
   spawnTreatment(0);
   spawnTreatment(1);
   printTerm('SKINDERMA lobby ready. Type help.');
+  let seen = false;
+  try { seen = !!localStorage.getItem('skinderma_v2_seen'); } catch (e) {}
+  if (!seen) {
+    setTimeout(() => document.getElementById('onboard').classList.add('show'), 700);
+  }
+  document.getElementById('on-tour').onclick = startTour;
+  document.getElementById('on-go').onclick = hideOnboard;
 
   function localPoint(e) {
     const rect = canvas.getBoundingClientRect();
@@ -1582,6 +1813,7 @@ Add a prop
     if (pointers.size === 1) {
       drag = { x: e.clientX, y: e.clientY, ox: view.x, oy: view.y, moved: false };
       pinch = null;
+      stopTour();
     } else if (pointers.size >= 2) {
       const pts = [...pointers.values()];
       pinch = {
@@ -1608,6 +1840,7 @@ Add a prop
       return;
     }
     if (!drag || !pointers.has(e.pointerId)) return;
+    followH = null;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
     if (Math.hypot(dx, dy) > (e.pointerType === 'touch' ? 8 : 4)) drag.moved = true;
     view.glide = false;
@@ -1621,9 +1854,21 @@ Add a prop
     if (pointers.size === 0 && wasDrag && !wasDrag.moved) {
       const pt = localPoint(e);
       const hit = pick(pt.x, pt.y);
-      selected = hit;
-      if (hit && !hit.tab) hit.tab = 'Layman';
-      renderDrawer();
+      if (hit) {
+        followH = null;
+        selected = hit;
+        if (!hit.tab) hit.tab = 'Layman';
+        renderDrawer();
+      } else {
+        const g = unIso(pt.x, pt.y);
+        let room = roomAt(g.gx, g.gy, 0);
+        if ((!room || room.name === 'Corridor') && showFull) {
+          const r2 = roomAt(g.gx, g.gy, 92);
+          if (r2 && r2.name !== 'Corridor') room = r2;
+        }
+        if (room && room.name !== 'Corridor' && room.short !== '2F hall') openRoomCard(room, pt.x, pt.y);
+        else { selected = null; followH = null; renderDrawer(); }
+      }
     }
     if (pointers.size === 1) {
       const left = [...pointers.values()][0];
@@ -1667,8 +1912,30 @@ Add a prop
   let guestAt = 6;
   let tickAt = 0;
   function loop(now) {
-    const dt = Math.min(0.05, (now - last) / 1000) * (paused ? 0 : speed);
+    const raw = Math.min(0.1, (now - last) / 1000);
+    const dt = Math.min(0.05, raw) * (paused ? 0 : speed);
     last = now;
+    if (!paused && raw > 0.034) slowFrames++;
+    else if (slowFrames > 0) slowFrames--;
+    if (!lowQ && slowFrames > 110) {
+      lowQ = true; slowFrames = 0; resize();
+      toast('Lite mode on — keeping things smooth on this device.');
+    }
+    if (followH && !followH.dead) {
+      const z = view.zoom;
+      view.tx = W / 2 - (followH.gx - followH.gy) * TW * z;
+      view.ty = H * 0.42 - ((followH.gx + followH.gy) * TH * z - (followH.z || 0) * z);
+      view.glide = true;
+    }
+    if (tourTimer > 0 && !paused) {
+      tourTimer -= dt;
+      if (tourTimer <= 0) {
+        focusKey(TOUR[tourIdx % TOUR.length]);
+        tourIdx++;
+        tourTimer = 5;
+        if (tourIdx >= TOUR.length + 1) stopTour();
+      }
+    }
     simT += dt;
     if (view.glide) {
       const dx = view.tx - view.x, dy = view.ty - view.y, dz = view.tz - view.zoom;
