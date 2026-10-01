@@ -304,7 +304,7 @@ Add a prop
   let W = 1280, H = 800, simT = 0, speed = 1, paused = false, showFull = true, pinkUntil = 0;
   let backend = false, selected = null, hover = null, drag = null;
   let night = false, followH = null, tourTimer = 0, tourIdx = 0, lowQ = false, slowFrames = 0;
-  const TOUR = ['R-101', 'L-105', 'consult', 'T-302', 'T-303', 'S-120', 'W-112', 'P-110', 'M-130', 'PH-402', 'f2'];
+  const TOUR = ['R-101', 'L-105', 'K-106', 'park', 'consult', 'T-302', 'T-303', 'S-120', 'W-112', 'P-110', 'M-130', 'T-401', 'PH-402', 'f2'];
   const actors = [];
   const PROPS = [];
   const termLines = [];
@@ -330,12 +330,16 @@ Add a prop
     { id:'L-105', short:'Waiting', name:'Waiting Lounge', gx:28, gy:11, gw:7, gh:7, z:0, floor:'#fff5f7', grid:'#f8d0da', wall:COL.rose, shell:true },
     { id:'W-112', short:'Restroom', name:'Beauty Restroom', gx:2, gy:20, gw:4, gh:8, z:0, floor:'#fff7fa', grid:'#f6dce5', wall:COL.blush, shell:true },
     { id:'D-108', short:'Lockers', name:'Changing Rooms', gx:6, gy:20, gw:4, gh:8, z:0, floor:'#f3fbf7', grid:'#d7f3e6', wall:COL.mint, shell:true },
-    { id:'B-402', short:'Board', name:'Executive Boardroom', gx:1.6, gy:0.45, gw:9.05, gh:6.05, z:92, floor:'#f3f9ff', grid:'#d6ebff', wall:COL.sky, shell:true },
+    { id:'K-106', short:'Playroom', name:'Family Playroom', gx:36, gy:10, gw:7, gh:8.5, z:0, floor:'#fff8ea', grid:'#f7e4bf', wall:COL.gold, shell:true },
+    { id:'T-401', short:'Treatment 2F', name:'Aesthetic Treatment Suite 2F', gx:1.6, gy:0.45, gw:9.05, gh:6.05, z:92, floor:'#f7f4ff', grid:'#e4dcfa', wall:COL.lav, shell:true },
     { id:'N-401', short:'Ops', name:'Clinic Operations', gx:13.05, gy:0.45, gw:10.15, gh:3.35, z:92, floor:'#fff9ee', grid:'#f8e7bf', wall:COL.gold, shell:true },
     { id:'PH-402', short:'Pharmacy', name:'Aesthetic Pharmacy & Retail', gx:13.05, gy:3.8, gw:10.15, gh:2.7, z:92, floor:'#fffbf7', grid:'#efe8dc', wall:COL.rose, shell:true }
   ];
 
-  const DOORS = [[22,10],[23,10],[25,10],[26,10],[3,20],[7,20],[16,21],[17,21],[26,19],[27,19],[30,6],[11,7],[12,7]];
+  const DOORS = [[22,10],[23,10],[25,10],[26,10],[3,20],[7,20],[16,21],[17,21],[26,19],[27,19],[30,6],[11,7],[12,7],[36,14]];
+  // Outdoor dog run, east of the treatment wing. Dogs are clamped to this rectangle; people never path here.
+  const DOG_PARK = { x0: 37.5, y0: 20.5, x1: 44.5, y1: 27.5 };
+  const dogBall = { type: 'dogball', gx: 40.5, gy: 23.5, z: 0 };
   const PLAYBOOKS = {
     reception: {
       code: 'def check_in_patient(queue):\n    card = read_member_card()\n    slot = next_open_consult()\n    print_wristband(card)\n    return call_to(slot)',
@@ -391,6 +395,11 @@ Add a prop
       code: 'def round():\n    for room in CLINIC:\n        restock_sanitiser(room)\n        log_linen(room)\n    return "round complete"',
       steps: ['Starting the floor round','Restocking sanitiser','Swapping linen','Checking the fire exit','Wiping the lounge tables','Round complete'],
       result: 'Facilities round complete'
+    },
+    family: {
+      code: 'def host_playroom(child):\n    check_in(child, parent_room)\n    sanitise_toys()\n    start_activity("story")\n    return ping_parent_when_done()',
+      steps: ['Checking the child in','Sanitising the toy bins','Starting story time','Snack and water break','Pinging the parent in treatment','Child handed back smiling'],
+      result: 'Playroom calm — three kids, one story, zero tears'
     },
     wellness: {
       code: 'def aftercare(patient):\n    plan = home_protocol(patient)\n    coach(plan)\n    return book_review(days=14)',
@@ -472,16 +481,16 @@ Add a prop
       lay:'Suwandi manages the clinic floor, patient experience, staffing, and daily hospital-grade operating standards.',
       tech:['Inputs: room status, staffing, patient flow','Systems: N-401 operations dashboard','SLA: resolve floor issues immediately','Output: safe and orderly clinic operations'],
       quotes:['Keep every room ready.','Patient flow is clear.','Standards check complete.'] },
-    { handle:'@finance_ada', name:'Ada Kusuma', role:'Billing lead', group:'Operations', roleKey:'finance', home:[4.6,3.4,92], room:'B-402', uniform:'#ffffff', hair:'#3f3f46', skin:'#f0c2a0', acc:'glasses',
+    { handle:'@finance_ada', name:'Ada Kusuma', role:'Billing lead', group:'Operations', roleKey:'finance', home:[15.25,2.85,92], room:'N-401', uniform:'#ffffff', hair:'#3f3f46', skin:'#f0c2a0', acc:'glasses',
       lay:'Ada closes the visit invoices and keeps insurance questions off the treatment floor.',
       tech:['Inputs: visit codes','Systems: billing desk','SLA: receipt before departure','Output: closed invoice'],
       quotes:['Ledger is open.','Cover is confirmed.','Receipt is ready.'] },
-    { handle:'@brand_leo', name:'Leo Prasetyo', role:'Brand lead', group:'Marketing', roleKey:'brand', home:[7.2,5.5,92], room:'B-402', uniform:COL.lav, hair:'#1e1b4b', skin:'#e0ac84', acc:'cap',
+    { handle:'@brand_leo', name:'Leo Prasetyo', role:'Brand lead', group:'Marketing', roleKey:'brand', home:[17.65,2.85,92], room:'N-401', uniform:COL.lav, hair:'#1e1b4b', skin:'#e0ac84', acc:'cap',
       lay:'Leo guards how SKINDERMA looks: only consented clinic photos, never a filter over a real result.',
-      tech:['Inputs: consented stills','Systems: boardroom desk','SLA: brand check before publish','Output: approved frame'],
+      tech:['Inputs: consented stills','Systems: 2F ops desk','SLA: brand check before publish','Output: approved frame'],
       quotes:['No filter on results.','Caption is with the doctor.','This frame is approved.'] },
-    { handle:'@social_zoe', name:'Zoe Halim', role:'Social content', group:'Marketing', roleKey:'brand', home:[9.4,5.5,92], room:'B-402', uniform:COL.blush, hair:'#9a3412', skin:'#f6d3b8', acc:'headphones',
-      lay:'Zoe cuts the journal stories from the boardroom and schedules them after a physician reads the line.',
+    { handle:'@social_zoe', name:'Zoe Halim', role:'Social content', group:'Marketing', roleKey:'brand', home:[20.05,2.85,92], room:'N-401', uniform:COL.blush, hair:'#9a3412', skin:'#f6d3b8', acc:'headphones',
+      lay:'Zoe cuts the journal stories from the 2F ops room and schedules them after a physician reads the line.',
       tech:['Inputs: approved stills','Systems: content desk','SLA: physician read-through','Output: scheduled post'],
       quotes:['Cutting the journal clip.','Waiting on a read-through.','It goes out this evening.'] },
     { handle:'@facilities_ben', name:'Ben Siregar', role:'Facilities', group:'Facilities', roleKey:'facilities', home:[8.2,23.4,0], room:'D-108', uniform:COL.sage, hair:'#3f3f46', skin:'#c98b62', acc:'cap',
@@ -496,17 +505,39 @@ Add a prop
       lay:'Siti welcomes guests who prefer a modest lounge experience and keeps the reception flow calm and respectful.',
       tech:['Inputs: arrival list, lounge preference','Systems: reception desk, VVIP lounge','SLA: greeting under 3 minutes','Output: seated guest with privacy'],
       quotes:['Welcome, please come in.','I saved a quiet seat for you.','The lounge is ready.'] },
-    { handle:'@pharm_elisa', name:'Elisa Wijaya', role:'Aesthetic pharmacist', group:'Clinical Support', roleKey:'pharma', home:[16.8,5.15,92], room:'PH-402', uniform:'#fffdf8', hair:'#4a3728', skin:'#f0c9a8', acc:'glasses',
-      lay:'Elisa runs the 2F aesthetic pharmacy: skincare retail, wellness programmes, and counselling before any injectable is released.',
-      tech:['Inputs: prescription, skin analysis, cold-chain log','Systems: retail showcase, SYLFIRM X demo unit','SLA: consult before Mounjaro or Wegovy','Output: bagged homecare and booked device sessions'],
-      quotes:['Let me walk you through the showcase.','Your peel kit is chilled.','SYLFIRM X is ready for demo.'] }
+    { handle:'@pharm_elisa', name:'Elisa Wijaya', role:'Aesthetic pharmacist', group:'Clinical Support', roleKey:'pharma', home:[16.4,4.8,92], room:'PH-402', uniform:'#fffdf8', hair:'#4a3728', skin:'#f0c9a8', acc:'glasses',
+      lay:'Elisa runs the 2F clinic pharmacy: physician-guided skincare, cold-chain injectables, and counselling before anything is dispensed.',
+      tech:['Inputs: prescription, skin analysis, cold-chain log','Systems: brand shelf, 2-8 C pharmacy fridge, dispensing counter','SLA: consult before Mounjaro or Wegovy','Output: dispensed homecare and booked device sessions'],
+      quotes:['Let me walk you through the shelf.','Your peel kit is ready.','Fridge is holding at 4 C.'] },
+    { handle:'@nurse_dewi', name:'Dewi Lestari', role:'Aesthetic treatment nurse (2F)', group:'Medical', roleKey:'nurse', home:[7.95,6.15,92], room:'T-401', uniform:COL.lav, hair:'#2c2418', skin:'#e8b896', acc:'cap',
+      lay:'Dewi runs the 2F treatment suite: bed prep, device checks on SYLFIRM X and HIFU, skin cooling, and aftercare notes.',
+      tech:['Inputs: treatment plan, signed consent','Systems: SYLFIRM X Ultimate, HIFU, pico laser, LED','SLA: bay turnover under 10 minutes','Output: completed session and aftercare card'],
+      quotes:['Bay is prepped.','Handpiece calibrated.','Cooling is on.'] },
+    { handle:'@care_rina', name:'Rina Marlina', role:'Family playroom host', group:'Wellness', roleKey:'family', home:[38.3,12.7,0], room:'K-106', uniform:'#fff3d6', hair:'#3b2a1e', skin:'#e8b896', acc:'hijab',
+      lay:'Rina looks after the kids in the family playroom while their parents are in consultation or treatment.',
+      tech:['Inputs: child check-in, parent room','Systems: soft-play room, toy sanitising log','SLA: parent pinged the moment a session ends','Output: happy child handed back'],
+      quotes:['Story time in five.','Shoes off on the mat.','Your mum is almost done.'] }
   ];
+  const KIDS = [
+    { handle:'@kid_aira', name:'Aira', age: 5, gender:'f', hair:'#2c2418', skin:'#f0c9a8', uniform:'#fbcfe8', parent:'mum is in T-303 for a HydraFacial' },
+    { handle:'@kid_kenzo', name:'Kenzo', age: 6, gender:'m', hair:'#111827', skin:'#e8b896', uniform:'#bfdbfe', parent:'dad is in C-201 with dr. Yeyen' },
+    { handle:'@kid_nayla', name:'Nayla', age: 4, gender:'f', hair:'#6b3f2a', skin:'#f6d3b8', uniform:'#fde68a', parent:'mum is in T-302 for HIFU' }
+  ];
+  const PLAY_SPOTS = [[37.7, 12.6], [40.9, 12.3], [39.1, 15.3], [41.7, 15.1], [38.2, 17.1], [41.1, 17.3]];
+  const KID_LINES = ['Wheee!', 'My turn!', 'Look, a bunny!', 'Catch!', 'Story time!', 'Again, again!'];
+  const DOGS = [
+    { handle:'@dog_joy', name:'Joy', mom:true, scale:1.0, collar:'#E85D75', home:[41.5, 24.5] },
+    { handle:'@dog_exa', name:'Exa', scale:0.64, collar:'#8EC5FF', home:[39.5, 22.5] },
+    { handle:'@dog_xela', name:'Xela', scale:0.64, collar:'#7ED3B2', home:[42.6, 22.8] },
+    { handle:'@dog_pico', name:'Pico', scale:0.6, collar:'#F2C14E', home:[40.2, 25.9] }
+  ];
+  const DOG_LINES = ['Woof!', 'Ball!', 'Zoomies!', 'Dig dig.', 'Nap in the sun.'];
 
   const FOCI = {
     full: [18, 15, 8, 0.92],
     yeyen: [26.2, 5.2, 0, 1.45],
     hengki: [32.5, 6.0, 0, 1.5],
-    f2: [12, 4.5, 92, 1.05],
+    f2: [12, 3.5, 92, 1.0],
     'R-101': [19, 14.5, 0, 1.15],
     consult: [29.5, 6, 0, 1.25],
     'P-110': [6, 12.6, 0, 1.55],
@@ -522,16 +553,18 @@ Add a prop
     'T-304': [32, 25.5, 0, 1.6],
     'C-201': [26.5, 5.5, 0, 1.5],
     'C-202': [32.5, 5.5, 0, 1.5],
-    'B-402': [6.2, 3.2, 92, 1.35],
+    'K-106': [39.5, 14.3, 0, 1.5],
+    park: [41, 24, 0, 1.4],
+    'T-401': [6.2, 3.2, 92, 1.4],
     'N-401': [17.6, 2.0, 92, 1.4],
-    'PH-402': [17.8, 5.05, 92, 1.55]
+    'PH-402': [17.8, 5.05, 92, 1.6]
   };
 
   const BREAKS = [
     { x:6.2, y:12.8, z:0, say:'Coffee at the kitchen~' },
     { x:9.0, y:17.0, z:0, say:'Team huddle~' },
     { x:32.2, y:16.2, z:0, say:'Quick break~' },
-    { x:20.2, y:5.8, z:92, say:'Heading up to the Sky Lounge~' },
+    { x:20.6, y:5.6, z:92, say:'Picking up skincare at the pharmacy~' },
     { x:27.2, y:7.2, z:0, say:'Sync with dr. Yeyen~' }
   ];
   const PATROL = [[18,16,0],[26,22,0],[16,24,0],[6,12.8,0],[31,15.6,0],[4.6,23.4,0]];
@@ -549,6 +582,7 @@ Add a prop
     finance: ['Receipt is ready.', 'You are all set.', 'Cover is confirmed.'],
     brand: ['Only real results.', 'Caption is approved.', 'Photo looks honest.'],
     facilities: ['Room is fresh.', 'On my round.', 'All set here.'],
+    family: ['Gentle hands, please.', 'Who wants a story?', 'Mum is almost done.'],
     wellness: ['SPF every two hours.', 'Your review is booked.', 'Rest the skin tonight.']
   };
   const BAYS = [{ x: 24.9, y: 20.9 }, { x: 30.9, y: 20.9 }, { x: 24.9, y: 24.9 }, { x: 30.9, y: 24.9 }];
@@ -611,7 +645,7 @@ Add a prop
     ctx.globalAlpha /= 0.65;
   }
   function add(p) { if (p.sort == null) p.sort = (p.gx || 0) + (p.gy || 0) + (p.z || 0) * 0.001; PROPS.push(p); }
-  const FEMALE_FIRST = new Set(['mia','lea','jessica','intan','hana','priya','ines','noor','sara','ada','zoe','ivy','evi','jerrica','nilbean','yeyen','aisha','siti','alya','nadia']);
+  const FEMALE_FIRST = new Set(['mia','lea','jessica','intan','hana','priya','ines','noor','sara','ada','zoe','ivy','evi','jerrica','nilbean','yeyen','aisha','siti','alya','nadia','dewi','elisa','rina','aira','nayla']);
   function actorFemale(s) {
     if (s.gender === 'f') return true;
     if (s.gender === 'm') return false;
@@ -756,27 +790,24 @@ Add a prop
 
     restroomAndLockers();
 
-    table(3, 2.3, 6, 1.15, 6, '#fffdf8', 92);
-    for (let i = 0; i < 5; i++) chair(3.3 + i * 1.1, 3.6, 92, i % 2 ? '#d7e4ef' : '#ffffff', false);
-    add({ type:'screenbank', gx: 4.2, gy: 0.58, z: 104, n: 1 });
-    workstation(3, 4.0, 92, COL.gold, false);
-    seats['@finance_ada'] = { x: 3.7, y: 4.9, z: 92 };
-    seats['@brand_leo'] = { x: 6.4, y: 4.6, z: 92 };
-    seats['@social_zoe'] = { x: 7.5, y: 4.6, z: 92 };
-    add({ type:'laptop', gx: 6.2, gy: 3.3, z: 98.2 });
-    add({ type:'laptop', gx: 7.3, gy: 3.3, z: 98.2 });
-
-    add({ type:'screenbank', gx: 13.4, gy: 0.62, z: 104, n: 3 });
-    for (let i = 0; i < 3; i++) workstation(13.4 + i * 2, 1.35, 92, [COL.sage, COL.gold, COL.sky][i], false);
-    seats['@ops_lucas'] = { x: 14.1, y: 2.7, z: 92 };
-    seats['@ops_sara'] = { x: 16.1, y: 2.7, z: 92 };
-    seats['@ops_wei'] = { x: 18.1, y: 2.7, z: 92 };
-    workstation(19.8, 1.45, 92, COL.sage, false);
-    seats['@manager_suwandi'] = { x: 20.5, y: 2.75, z: 92 };
-    seats['@pharm_elisa'] = { x: 16.8, y: 5.15, z: 92 };
+    // 2F operations: two rows of desks, no wall screens.
+    const opsRow1 = [['@ops_lucas', 14.1, COL.sage], ['@ops_sara', 16.0, COL.gold], ['@ops_wei', 17.9, COL.sky], ['@manager_suwandi', 19.8, COL.sage]];
+    opsRow1.forEach(([h, gx, c]) => { seats[h] = workstation(gx, 0.6, 92, c, false); });
+    const opsRow2 = [['@finance_ada', 14.5, COL.gold], ['@brand_leo', 16.9, COL.lav], ['@social_zoe', 19.3, COL.blush]];
+    opsRow2.forEach(([h, gx, c]) => { seats[h] = workstation(gx, 2.75, 92, c, true); });
+    addBox(21.6, 0.68, 1.3, 0.6, 7, '#ffffff', 92, '#eef2f6', '#d9e1e8');
+    addBox(21.7, 0.74, 0.5, 0.42, 1.6, '#f8fafc', 99, '#e2e8f0', '#cbd5e1');
+    addBox(21.5, 2.85, 0.7, 0.5, 2.6, '#f8fafc', 92, '#e2e8f0', '#cbd5e1');
+    sanitiser(22.65, 2.2, 92);
+    seats['@pharm_elisa'] = { x: 16.4, y: 4.8, z: 92 };
+    seats['@nurse_dewi'] = { x: 7.95, y: 6.15, z: 92 };
     add({ type:'stairs', gx: 10.95, gy: 8.05, z: 0 });
 
+    furnishTreatment2F();
     furnishPharmacy2F();
+    furnishPlayroom();
+    furnishDogPark();
+    seats['@care_rina'] = { x: 38.3, y: 12.7, z: 0 };
 
     dressClinic();
 
@@ -832,7 +863,6 @@ Add a prop
     add({ type:'art', gx: 25.2, gy: 2.08, z: 18, c1: '#e7f6ef', c2: '#8EC5FF' });
     add({ type:'art', gx: 31.2, gy: 2.08, z: 18, c1: '#fdecef', c2: '#7ED3B2' });
     add({ type:'art', gx: 29.4, gy: 11.08, z: 18, c1: '#dcefe6', c2: '#B8A1F2' });
-    add({ type:'art', gx: 3.2, gy: 0.58, z: 108, c1: '#e0f2fe', c2: '#5FB382' });
     addBox(22.9, 13.2, 1.1, 0.5, 9, '#fff7ed', 0, '#f3e2c7', '#e5cba0');
     for (let i = 0; i < 4; i++) addBox(23.0 + i * 0.24, 13.3, 0.16, 0.3, 1.4 + (i % 2), ['#F4A7B9', '#F2C14E', '#7ED3B2', '#ffffff'][i], 9);
     addBox(20.6, 18.6, 0.5, 0.5, 7, '#ffffff', 0, '#e2e8f0', COL.sky);
@@ -857,21 +887,137 @@ Add a prop
     addBox(11.2, 14.6, 2.6, 0.35, 10, '#ffffff', 0, '#f1ead9', '#e2d9c2');
     addBox(11.25, 14.65, 2.5, 0.25, 1.2, '#3f7d68', 10);
     for (let i = 0; i < 4; i++) addBox(12.2 + i * 3.4, 9.55, 0.12, 0.12, 7, '#94a3b8', 0);
-    addBox(4.4, 5.7, 0.4, 0.3, 4.5, '#fee2e2', 92, '#fecaca', '#ef4444');
     medicalDevices();
   }
 
+  function furnishTreatment2F() {
+    const z = 92, W = '#ffffff', L = '#eef2f6', R = '#d9e1e8';
+    // Hand-wash station, sharps, sanitiser, glove dispensers, clinical waste.
+    addBox(1.9, 0.68, 1.3, 0.55, 7, W, z, L, R);
+    add({ type:'restroom', kind:'sink', gx: 2.05, gy: 0.72, z: z + 7 });
+    sanitiser(3.0, 0.74, z + 7);
+    addBox(2.72, 0.76, 0.26, 0.26, 2.4, '#fde047', z + 7, '#facc15', '#ca8a04');
+    [5.5, 5.82].forEach((gx, i) => addBox(gx, 0.66, 0.28, 0.12, 1.5, i ? '#dcefe6' : '#e0f2fe', z + 13));
+    addBox(3.5, 0.72, 0.42, 0.42, 4.4, '#fde047', z, '#facc15', '#ca8a04');
+    addBox(4.0, 0.72, 0.42, 0.42, 4.4, '#e5e7eb', z, '#d1d5db', '#9ca3af');
+    // Bay A: SYLFIRM X Ultimate (RF microneedling) + pico laser + skin cooling.
+    add({ type:'curtain', gx: 2.4, gy: 1.55, gw: 2.4, z, color: '#dcefe6' });
+    treatmentBed(2.6, 1.9, z);
+    device('lamp', 4.8, 0.85, z);
+    device('laser', 5.15, 0.8, z, 'Pico laser');
+    addBox(4.75, 2.0, 0.5, 0.7, 4, W, z, L, R);
+    addBox(4.82, 2.1, 0.15, 0.12, 0.5, '#8EC5FF', z + 4);
+    addBox(5.05, 2.1, 0.15, 0.12, 0.5, '#F4A7B9', z + 4);
+    addBox(4.85, 2.4, 0.3, 0.2, 0.35, W, z + 4);
+    chair(3.4, 3.05, z, COL.lav, false);
+    device('sylfirm', 2.0, 3.35, z, 'SYLFIRM X Ultimate');
+    device('cooler', 4.9, 3.3, z, 'Skin cooler');
+    glassPartition(6.15, 0.7, 4.3, z);
+    // Bay B: HIFU + LED therapy, emergency cart and oxygen by the door.
+    add({ type:'curtain', gx: 6.6, gy: 1.55, gw: 2.4, z, color: '#e0f2fe' });
+    treatmentBed(6.8, 1.9, z);
+    device('lamp', 8.9, 1.3, z);
+    addBox(8.95, 2.1, 0.5, 0.7, 4, W, z, L, R);
+    addBox(9.02, 2.2, 0.15, 0.12, 0.5, '#7ED3B2', z + 4);
+    addBox(9.25, 2.2, 0.15, 0.12, 0.5, '#F2C14E', z + 4);
+    chair(7.6, 3.05, z, COL.lav, false);
+    device('hifu', 6.4, 3.4, z, 'HIFU');
+    device('led', 8.3, 3.5, z, 'LED therapy');
+    device('crash', 9.95, 1.55, z, 'Emergency cart');
+    addBox(10.25, 0.78, 0.22, 0.22, 7.5, '#e0f2fe', z, '#bae6fd', '#38bdf8');
+    addBox(10.31, 0.84, 0.1, 0.1, 0.8, '#94a3b8', z + 7.5);
+    // Supplies, linen, nurse prep desk, extinguisher by the door.
+    addBox(1.85, 4.7, 0.6, 1.4, 11, W, z, L, R);
+    addBox(2.42, 4.95, 0.04, 0.05, 1.0, '#C4A265', z + 5);
+    addBox(2.42, 5.65, 0.04, 0.05, 1.0, '#C4A265', z + 5);
+    addBox(4.2, 5.2, 0.9, 0.5, 5, '#f8fafc', z, '#e2e8f0', '#cbd5e1');
+    addBox(4.3, 5.28, 0.7, 0.34, 0.8, '#dcefe6', z + 5);
+    workstation(7.2, 4.75, z, COL.mint, false);
+    addBox(10.15, 5.0, 0.3, 0.26, 4.5, '#fee2e2', z, '#fecaca', '#ef4444');
+    glassPartition(10.58, 0.6, 2.55, z);
+    glassPartition(10.58, 4.45, 6.35, z);
+    pendant(3.5, 2.4, z);
+    pendant(7.7, 2.4, z);
+  }
+
+  // 1F east wing: family playroom (K-106). Parents in consult/treatment, kids play here with a host.
+  function furnishPlayroom() {
+    // Soft-play mat tiles in the middle of the room.
+    add({ type:'playmat', gx: 37.4, gy: 12.4, gw: 4, gh: 3, z: 0 });
+    // Host counter by the door with a sanitiser and a check-in iPad.
+    table(36.5, 12.9, 0.9, 1.6, 7.1, '#fffdf8', 0);
+    sanitiser(36.6, 12.95, 7.1);
+    add({ type:'laptop', gx: 36.75, gy: 13.9, z: 7.25 });
+    // Ball pit (north-east corner) and mini slide (north-west corner).
+    add({ type:'ballpit', gx: 40.6, gy: 10.6, gw: 2.1, gh: 1.6, z: 0 });
+    add({ type:'slide', gx: 37.3, gy: 10.5, z: 0 });
+    // Toy shelf against the north wall, between the slide and the ball pit.
+    add({ type:'toyshelf', gx: 38.7, gy: 10.3, gw: 1.7, z: 0 });
+    // Kids' activity table with three tiny chairs.
+    table(39.0, 14.0, 1.3, 0.95, 5.2, '#fff7ed', 0);
+    chair(38.6, 14.15, 0, '#fda4af');
+    chair(40.4, 14.15, 0, '#93c5fd', true);
+    chair(39.5, 15.05, 0, '#fde68a');
+    // Play tent (south-east) and reading corner with bean bags + low bookshelf (south-west).
+    add({ type:'tent', gx: 41.2, gy: 16.0, z: 0 });
+    add({ type:'bookshelf', gx: 36.3, gy: 16.6, gh: 1.5, z: 0 });
+    add({ type:'beanbag', gx: 37.4, gy: 17.3, z: 0, color: '#fbcfe8' });
+    add({ type:'beanbag', gx: 38.3, gy: 17.6, z: 0, color: '#bfdbfe' });
+    // Toy box and a rocking horse by the mat.
+    add({ type:'toybox', gx: 42.1, gy: 13.4, z: 0 });
+    add({ type:'horse', gx: 42.2, gy: 14.9, z: 0 });
+    // Wall art: pastel framed prints on the north wall.
+    [[37.0, '#fde68a'], [40.2, '#bbf7d0'], [42.0, '#fbcfe8']].forEach(([x, c]) => add({ type:'kidart', gx: x, gy: 10.2, z: 14, color: c }));
+    pendant(38.3, 12.4, 0);
+    pendant(41.2, 15.2, 0);
+  }
+  // Outdoor dog run east of the building. Dogs only; nobody paths here.
+  function furnishDogPark() {
+    const P = DOG_PARK;
+    const fx0 = P.x0 - 0.5, fy0 = P.y0 - 0.5, fx1 = P.x1 + 0.5, fy1 = P.y1 + 0.5;
+    // gx/gy are the probe point used for view culling; keep it on the lawn so the fence is never culled.
+    // Back half (north + west with gate) draws before the lawn props, front half (east + south) after them.
+    add({ type:'fence', side: 'back', gx: (fx0 + fx1) / 2, gy: (fy0 + fy1) / 2, x0: fx0, y0: fy0, x1: fx1, y1: fy1, gate: [23.5, 24.6], z: 0, sort: fx0 + fy0 - 5 });
+    add({ type:'fence', side: 'front', gx: (fx0 + fx1) / 2, gy: (fy0 + fy1) / 2, x0: fx0, y0: fy0, x1: fx1, y1: fy1, gate: [23.5, 24.6], z: 0, sort: fx1 + fy1 + 5 });
+    add({ type:'parksign', gx: fx0 + 0.3, gy: fy0 - 0.35, z: 0, text: 'SKINDERMA DOG PARK' });
+    // Paved path from the building edge to the gate.
+    add({ type:'path', gx: 35.2, gy: 23.5, gw: fx0 - 35.2, gh: 1.1, z: 0, sort: -100 });
+    add({ type:'tree', gx: fx0 + 0.9, gy: fy0 + 0.9, z: 0, r: 1.0 });
+    add({ type:'tree', gx: fx1 - 0.9, gy: fy0 + 1.1, z: 0, r: 0.85 });
+    add({ type:'tree', gx: fx1 - 1.0, gy: fy1 - 1.0, z: 0, r: 0.9 });
+    add({ type:'kennel', gx: 42.6, gy: 21.2, z: 0 });
+    add({ type:'bowl', gx: 42.4, gy: 23.0, z: 0, color: '#8EC5FF' });
+    add({ type:'bowl', gx: 42.9, gy: 23.0, z: 0, color: '#c4823d' });
+    add({ type:'bench', gx: 38.0, gy: 27.0, z: 0 });
+    add({ type:'jumpbar', gx: 38.6, gy: 25.2, z: 0 });
+    add({ type:'tunnel', gx: 40.8, gy: 26.4, z: 0 });
+    add(dogBall);
+    add({ type:'flowers', gx: fx0 + 0.2, gy: fy1 - 0.4, gw: 2.2, z: 0 });
+  }
   function furnishPharmacy2F() {
-    add({ type:'pharmwall', gx: 13.35, gy: 3.92, z: 92, sort: 870 });
-    add({ type:'showcase', gx: 13.45, gy: 4.15, z: 92, gw: 5.4, gh: 1.15, sort: 880 });
-    add({ type:'pharmkiosk', gx: 19.15, gy: 4.2, z: 92, sort: 890 });
-    device('sylfirm', 21.15, 4.35, 92, 'SYLFIRM X Ultimate');
-    table(15.6, 5.15, 2.15, 0.7, 6, '#fffdf8', 92);
-    chair(16.2, 5.95, 92, COL.blush, false);
-    chair(18.15, 5.95, 92, COL.mint, true);
-    sanitiser(22.55, 5.85, 92);
-    pendant(16.4, 5.2, 92);
-    pendant(20.6, 5.2, 92);
+    const z = 92;
+    add({ type:'pharmsign', gx: 14.2, gy: 3.96, z, sort: 860 });
+    add({ type:'pharmshelf', gx: 13.45, gy: 4.02, gw: 6.0, z, sort: 870 });
+    add({ type:'pharmfridge', gx: 19.75, gy: 4.0, z, sort: 875 });
+    addBox(21.05, 4.02, 0.95, 0.5, 15.5, '#ffffff', z, '#eef2f6', '#d9e1e8');
+    addBox(21.5, 4.5, 0.06, 0.04, 0.5, '#C4A265', z + 8);
+    add({ type:'pharmcounter', gx: 14.3, gy: 5.15, gw: 4.4, z, sort: 885 });
+    add({ type:'laptop', gx: 14.85, gy: 5.27, z: z + 7 });
+    addBox(15.9, 5.45, 0.2, 0.14, 0.5, '#e7e0d2', z + 6.9);
+    addBox(16.9, 5.3, 0.5, 0.3, 1.3, '#fdecef', z + 6.9);
+    addBox(17.7, 5.3, 0.42, 0.3, 1.6, '#f3e8dc', z + 6.9, '#e6d7c7', '#d7c4af');
+    sanitiser(18.25, 5.3, z + 6.9);
+    chair(17.9, 6.0, z, COL.mint, false);
+    table(20.0, 5.35, 1.3, 0.6, 3.6, '#fffdf8', z);
+    addBox(20.3, 5.45, 0.32, 0.26, 1.1, '#e0f2fe', z + 3.6);
+    chair(19.6, 6.0, z, COL.blush, false);
+    chair(21.5, 6.0, z, COL.blush, false);
+    addBox(22.3, 5.5, 0.55, 0.5, 0.45, '#f8fafc', z, '#e2e8f0', '#cbd5e1');
+    addBox(22.5, 5.55, 0.15, 0.1, 0.25, '#3f7d68', z + 0.45);
+    addBox(13.5, 6.0, 0.4, 0.4, 2.0, COL.mint, z);
+    sanitiser(13.4, 5.75, z);
+    pendant(15.6, 5.0, z);
+    pendant(19.8, 5.0, z);
   }
   function kitchenAndMeeting() {
     const wood = '#f6efe0', woodL = '#e8dfc9', woodR = '#d8ccb0';
@@ -989,14 +1135,21 @@ Add a prop
     device('kiosk', 21.7, 12.4, 0, 'Check-in kiosk');
     device('crash', 22.0, 18.1, 0, 'Crash cart');
   }
-  function stairCell(x, y) { return x >= 11 && x <= 13 && y >= 4 && y <= 10; }
+  // Floor change happens on the 2F landing row only; the staircase itself is 1F corridor.
+  function stairCell(x, y) { return (x === 11 || x === 12) && y === 6; }
+  function onStairs(x, y) { return (x === 11 || x === 12) && y >= 6 && y <= 9; }
+  const DOORS2 = [[13, 2], [13, 5], [22, 3], [10, 3], [10, 4]];
   function walkable(x, y, z) {
     if (DOORS.some((d) => d[0] === x && d[1] === y) && z === 0) return true;
     if (z >= 40) {
-      if (stairCell(x, y)) return true;
-      return ROOMS.some((r) => r.z === 92 && r.shell && x > r.gx && x < r.gx + r.gw - 1 && y > r.gy && y < r.gy + r.gh - 1);
+      if ((x === 11 || x === 12) && y >= 1 && y <= 6) return true;
+      if (DOORS2.some((d) => d[0] === x && d[1] === y)) return true;
+      if (x === 10 || x === 13) return false;
+      if (x >= 14 && x <= 22 && y === 3) return false;
+      return ROOMS.some((r) => r.z === 92 && r.shell && x > r.gx + 0.3 && x < r.gx + r.gw - 0.6 && y > r.gy + 0.1 && y < r.gy + r.gh - 0.6);
     }
-    if (x < 1 || y < 1 || x > 36 || y > 28) return false;
+    const inWing = x >= 36 && x <= 42 && y >= 11 && y <= 18;
+    if ((x < 1 || y < 1 || x > 36 || y > 28) && !inWing) return false;
     if (x === 29 && y >= 3 && y <= 8 && y !== 6) return false;
     for (const r of ROOMS) {
       if (!r.shell || r.z) continue;
@@ -1061,7 +1214,8 @@ Add a prop
       if ((r.z || 0) !== zf) continue;
       if (gx >= r.gx && gx < r.gx + r.gw && gy >= r.gy && gy < r.gy + r.gh) hit = r;
     }
-    if (zf === 0 && stairCell(Math.round(gx), Math.round(gy))) return { short:'Stairs', name:'Staircase' };
+    if (zf === 0 && onStairs(Math.round(gx), Math.round(gy))) return { short:'Stairs', name:'Staircase' };
+    if (zf === 0 && gx >= 37 && gx <= 45 && gy >= 20 && gy <= 28) return { id:'park', short:'Dog park', name:'Dog Park', z:0, wall:'#7fb77e' };
     return hit || { short: zf ? '2F hall' : 'Corridor', name: 'Corridor' };
   }
   function log(a, text) {
@@ -1087,18 +1241,30 @@ Add a prop
     if (!path.length) {
       a.path = [];
       a.state = 'AT_STATION';
+      a.after = null;
+      a.stairs = false;
+      a.nextBreak = simT + 30 + Math.random() * 30;
       a.say = 'One moment';
       a.sayUntil = simT + 1.6;
       return;
     }
     a.path = path;
+    a.stairs = path.some((n) => n.z !== path[0].z) || Math.abs((a.z || 0) - path[0].z) > 1;
     a.state = 'WALKING';
+  }
+  function visZ(s) {
+    const z = s.z || 0;
+    if (!s.stairs || z >= 92) return z;
+    if (s.gx < 10.75 || s.gx > 13.0 || s.gy < 5.9 || s.gy > 9.75) return z;
+    const ramp = 92 * Math.max(0, Math.min(1, (9.7 - s.gy) / 3.35));
+    return Math.max(z, ramp);
   }
   function goHome(a) {
     a.rush = false;
     goTo(a, a.home[0], a.home[1], a.home[2], 'HOME');
   }
   function arrive(a) {
+    a.stairs = false;
     if (a.after === 'REMOVE') { a.dead = true; return; }
     if (a.after === 'HOME') {
       a.state = 'AT_STATION';
@@ -1112,6 +1278,7 @@ Add a prop
     else if (a.after === 'PINK') a.holdUntil = pinkUntil;
     else if (a.after === 'PATROL') a.holdUntil = simT + 2.5;
     else if (a.after === 'WHEEL') a.holdUntil = simT + 6;
+    else if (a.after === 'KIDPLAY') a.holdUntil = simT + 4 + Math.random() * 7;
     else if (a.after === 'STEP') {
       a.holdUntil = simT + (a.stepHold || 6);
       const step = a.script && a.script[a.si || 0];
@@ -1151,6 +1318,77 @@ Add a prop
     { handle:'@vvip_carsteniel', name:'Carsteniel', home:[31.2, 13.8, 0], hair:'#111827', skin:'#d9a27a', acc:'glasses' },
     { handle:'@vvip_carnelio', name:'Carnelio', home:[33.8, 14.2, 0], hair:'#92400e', skin:'#c98b62', acc:'none' }
   ];
+  function makeKid(k, i) {
+    const a = makeActor({
+      handle: k.handle, name: k.name, role: 'Child, age ' + k.age, group: 'Family', roleKey: 'reception',
+      home: [PLAY_SPOTS[i % PLAY_SPOTS.length][0], PLAY_SPOTS[i % PLAY_SPOTS.length][1], 0], room: 'K-106',
+      uniform: k.uniform, hair: k.hair, skin: k.skin, acc: 'none', gender: k.gender, kid: true, scale: 0.62,
+      lay: k.name + ' (' + k.age + ') is playing in the family room while ' + k.parent + '. Rina keeps an eye on the kids until the session ends.',
+      tech: ['Checked in with a parent', 'Stays inside K-106', 'Toys sanitised between families'],
+      quotes: KID_LINES
+    }, false);
+    a.nextBreak = 3 + i * 4;
+    return a;
+  }
+  function makeDog(d) {
+    const a = makeActor({
+      handle: d.handle, name: d.name, role: d.mom ? 'Golden retriever, the mum' : 'Golden retriever puppy', group: 'Dogs', roleKey: 'reception',
+      home: [d.home[0], d.home[1], 0], room: 'park', uniform: '#d9a85c', hair: '#b8853f', skin: '#d9a85c', acc: 'none',
+      pet: true, mom: !!d.mom, scale: d.scale, collar: d.collar, face: 1,
+      lay: d.mom
+        ? 'Joy is the family golden retriever and mum to Exa, Xela, and Pico. She keeps the pups in the fenced dog park outside the clinic; none of them come indoors.'
+        : d.name + ' is one of Joy\'s puppies. ' + d.name + ' plays in the dog park outside the clinic with the ball and the agility bar, and never goes inside.',
+      tech: ['Lives in the outdoor dog park', 'Fenced run, no clinic access', 'Water and shade all day'],
+      quotes: DOG_LINES
+    }, false);
+    a.state = 'PLAYING';
+    a.idle = 1 + Math.random() * 4;
+    return a;
+  }
+  function kidNext(a) {
+    const sp = PLAY_SPOTS[Math.floor(Math.random() * PLAY_SPOTS.length)];
+    a.say = KID_LINES[Math.floor(Math.random() * KID_LINES.length)];
+    a.sayUntil = simT + 2.6;
+    goTo(a, sp[0], sp[1], 0, 'KIDPLAY');
+  }
+  function updateDog(a, dt) {
+    const P = DOG_PARK;
+    const cx = (v) => Math.max(P.x0, Math.min(P.x1, v)), cy = (v) => Math.max(P.y0, Math.min(P.y1, v));
+    if (a.state !== 'WALKING') {
+      a.idle -= dt;
+      if (a.idle > 0) return;
+      let tx, ty;
+      const r = Math.random();
+      if (r < 0.3) { tx = dogBall.gx; ty = dogBall.gy; a.chasing = true; }
+      else if (r < 0.45 && !a.mom) {
+        const mom = actors.find((d) => d.pet && d.mom);
+        tx = (mom ? mom.gx : a.gx) + (Math.random() - 0.5) * 1.4;
+        ty = (mom ? mom.gy : a.gy) + (Math.random() - 0.5) * 1.4;
+      } else if (r < 0.55 && a.mom) { tx = 43.0; ty = 25.2; }
+      else { tx = P.x0 + Math.random() * (P.x1 - P.x0); ty = P.y0 + Math.random() * (P.y1 - P.y0); }
+      a.dest = { x: cx(tx), y: cy(ty) };
+      a.state = 'WALKING';
+      if (Math.random() < 0.35) { a.say = DOG_LINES[Math.floor(Math.random() * DOG_LINES.length)]; a.sayUntil = simT + 2.2; }
+      return;
+    }
+    const spd = a.mom ? 1.6 : 2.3;
+    const dx = a.dest.x - a.gx, dy = a.dest.y - a.gy, dist = Math.hypot(dx, dy);
+    if (dist < 0.12) {
+      a.state = a.mom && Math.random() < 0.5 ? 'RESTING' : 'PLAYING';
+      a.idle = (a.state === 'RESTING' ? 4 : 1.2) + Math.random() * 4;
+      if (a.chasing) {
+        a.chasing = false;
+        dogBall.gx = cx(a.gx + (Math.random() - 0.5) * 4.5);
+        dogBall.gy = cy(a.gy + (Math.random() - 0.5) * 4.5);
+        dogBall.sort = dogBall.gx + dogBall.gy;
+      }
+      return;
+    }
+    const step = Math.min(dist, spd * dt);
+    a.gx = cx(a.gx + dx / dist * step);
+    a.gy = cy(a.gy + dy / dist * step);
+    a.face = dx >= 0 ? 1 : -1;
+  }
   function makeVVIPPatient(person, index) {
     const a = makeActor({
       handle: person.handle, name: person.name, role:'VVIP Guest', group:'Guest', roleKey:'reception',
@@ -1198,6 +1436,7 @@ Add a prop
 
   function updateActor(a, dt) {
     if (a.dead) return;
+    if (a.pet) { updateDog(a, dt); return; }
     if (a.state === 'WALKING') {
       if (!a.path.length) { if (!a.job) arrive(a); return; }
       const n = a.path[0];
@@ -1221,6 +1460,7 @@ Add a prop
       if (a.after === 'PATROL') { a.state = 'AT_STATION'; a.nextPatrol = simT + 1; return; }
       if (a.after === 'WHEEL') { a.laserOn = false; goHome(a); return; }
       if (a.after === 'BREAK' || a.after === 'PINK') { goHome(a); return; }
+      if (a.after === 'KIDPLAY') { kidNext(a); return; }
       if (a.guest) {
         a.si = (a.si || 0) + 1;
         const step = a.script[a.si];
@@ -1228,6 +1468,10 @@ Add a prop
         a.say = step.say; a.sayUntil = simT + 3; a.stepHold = step.hold;
         goTo(a, step.x, step.y, step.z, step.remove ? 'REMOVE' : 'STEP');
       }
+      return;
+    }
+    if (a.kid) {
+      if (a.state === 'AT_STATION' && simT > a.nextBreak) kidNext(a);
       return;
     }
     if (a.guest || a.busy) return;
@@ -1246,7 +1490,7 @@ Add a prop
       goTo(a, toBay[0], toBay[1], 0, 'WHEEL');
       return;
     }
-    if (a.state === 'AT_STATION' && simT > a.nextBreak && simT > pinkUntil && a.handle !== '@facilities_ben') {
+    if (a.state === 'AT_STATION' && simT > a.nextBreak && simT > pinkUntil && a.handle !== '@facilities_ben' && a.handle !== '@care_rina') {
       const spot = BREAKS[Math.floor(Math.random() * BREAKS.length)];
       a.say = spot.say; a.sayUntil = simT + 3.2;
       a.breakUntil = simT + 9 + Math.random() * 6;
@@ -1336,6 +1580,252 @@ Add a prop
     box(p.gx + 0.04, p.gy + 0.04, p.gw - 0.08, p.gh - 0.08, 0.16, shade(top, -8), shade(top, -20), shade(top, -32), null, z + legH - 0.06);
     box(p.gx - 0.06, p.gy - 0.06, p.gw + 0.12, p.gh + 0.12, topT, top, shade(top, -14), shade(top, -28), null, z + legH);
   }
+  // Family playroom props. Returns true when the prop was handled.
+  function drawPlayProp(p, t) {
+    const zm = view.zoom, z = p.z || 0;
+    if (p.type === 'playmat') {
+      const tones = ['#fde68a', '#bfdbfe', '#fbcfe8', '#bbf7d0'];
+      for (let ix = 0; ix < p.gw; ix++) for (let iy = 0; iy < p.gh; iy++) {
+        floorQuad(p.gx + ix, p.gy + iy, 1, 1, z + 0.9, tones[(ix + iy * 3) % 4], null);
+      }
+      poly([iso(p.gx, p.gy, z + 0.95), iso(p.gx + p.gw, p.gy, z + 0.95), iso(p.gx + p.gw, p.gy + p.gh, z + 0.95), iso(p.gx, p.gy + p.gh, z + 0.95)], null, 'rgba(120,100,70,.25)');
+      return true;
+    }
+    if (p.type === 'ballpit') {
+      box(p.gx, p.gy, p.gw, p.gh, 5, '#ffffff', '#f1f5f9', '#e2e8f0', 'rgba(148,163,184,.45)', z);
+      const cols = ['#f87171', '#60a5fa', '#fbbf24', '#34d399', '#f472b6'];
+      let k = 0;
+      for (let ix = 0.18; ix < p.gw - 0.1; ix += 0.27) for (let iy = 0.18; iy < p.gh - 0.1; iy += 0.3) {
+        const o = iso(p.gx + ix, p.gy + iy, z + 5.2 + ((k * 7) % 3) * 0.6);
+        ctx.fillStyle = cols[k++ % cols.length];
+        ctx.beginPath(); ctx.arc(o.x, o.y, 3.1 * zm, 0, 7); ctx.fill();
+      }
+      return true;
+    }
+    if (p.type === 'slide') {
+      // Ladder tower at the north, slide running south onto the mat.
+      box(p.gx, p.gy, 0.8, 0.7, 14, '#fde68a', '#f5d36a', '#e4bd4a', 'rgba(148,163,184,.4)', z);
+      box(p.gx + 0.15, p.gy - 0.08, 0.5, 0.1, 18, '#fca5a5', '#f98080', '#f06060', null, z);
+      const a = iso(p.gx + 0.1, p.gy + 0.7, z + 13.5), b = iso(p.gx + 0.7, p.gy + 0.7, z + 13.5);
+      const c = iso(p.gx + 0.7, p.gy + 2.1, z + 1.2), d = iso(p.gx + 0.1, p.gy + 2.1, z + 1.2);
+      poly([a, b, c, d], '#8EC5FF', 'rgba(60,90,130,.35)');
+      ctx.strokeStyle = '#5ea4e8'; ctx.lineWidth = Math.max(1.5, 2 * zm);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(d.x, d.y); ctx.moveTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.stroke();
+      return true;
+    }
+    if (p.type === 'toyshelf') {
+      box(p.gx, p.gy, p.gw, 0.42, 12, '#fffdf8', '#f1ebe0', '#e3dccf', 'rgba(148,163,184,.45)', z);
+      const toys = ['#f87171', '#60a5fa', '#fbbf24', '#34d399', '#a78bfa', '#f472b6'];
+      [[3.2, 0.26], [7.6, 0.2]].forEach(([h, s], row) => {
+        for (let i = 0; i < 5; i++) {
+          const x = p.gx + 0.12 + i * (p.gw - 0.24) / 5;
+          const c = toys[(i + row * 2) % toys.length];
+          box(x, p.gy + 0.08, s, 0.22, 2.4 + (i % 2) * 0.8, c, shade(c, -16), shade(c, -30), null, z + h);
+        }
+      });
+      // Teddy on the top shelf.
+      const o = iso(p.gx + p.gw - 0.3, p.gy + 0.2, z + 12);
+      ctx.fillStyle = '#c4823d';
+      ctx.beginPath(); ctx.arc(o.x, o.y - 4 * zm, 3.4 * zm, 0, 7); ctx.arc(o.x, o.y - 10 * zm, 2.6 * zm, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(o.x - 2.2 * zm, o.y - 12 * zm, 1.1 * zm, 0, 7); ctx.arc(o.x + 2.2 * zm, o.y - 12 * zm, 1.1 * zm, 0, 7); ctx.fill();
+      return true;
+    }
+    if (p.type === 'tent') {
+      const base = 0.65;
+      const top = iso(p.gx + base, p.gy + base, z + 22);
+      const f = [iso(p.gx, p.gy + base * 2, z), iso(p.gx + base * 2, p.gy + base * 2, z), iso(p.gx + base * 2, p.gy, z), iso(p.gx, p.gy, z)];
+      poly([f[3], f[0], top], '#fbcfe8', 'rgba(150,80,110,.3)');
+      poly([f[0], f[1], top], '#f9a8d4', 'rgba(150,80,110,.3)');
+      poly([f[1], f[2], top], '#fbcfe8', 'rgba(150,80,110,.3)');
+      // Door opening on the south face.
+      const m = iso(p.gx + base, p.gy + base * 2, z), door = iso(p.gx + base, p.gy + base * 2, z + 11);
+      poly([{ x: m.x - 5 * zm, y: m.y }, { x: m.x + 5 * zm, y: m.y }, door], '#fdf2f8', null);
+      ctx.fillStyle = '#E85D75'; ctx.beginPath(); ctx.arc(top.x, top.y - 2 * zm, 2.2 * zm, 0, 7); ctx.fill();
+      return true;
+    }
+    if (p.type === 'bookshelf') {
+      box(p.gx, p.gy, 0.38, p.gh, 9, '#fffdf8', '#f1ebe0', '#e3dccf', 'rgba(148,163,184,.45)', z);
+      const cs = ['#f87171', '#60a5fa', '#fbbf24', '#34d399', '#a78bfa', '#fb923c'];
+      [2.4, 5.8].forEach((h, row) => {
+        for (let i = 0; i < 6; i++) {
+          const y = p.gy + 0.08 + i * (p.gh - 0.16) / 6;
+          const c = cs[(i + row) % cs.length];
+          box(p.gx + 0.06, y, 0.26, 0.16, 2.2 + (i % 3) * 0.4, c, shade(c, -16), shade(c, -30), null, z + h);
+        }
+      });
+      return true;
+    }
+    if (p.type === 'beanbag') {
+      const o = iso(p.gx, p.gy, z);
+      ctx.fillStyle = 'rgba(80,70,50,.14)'; ctx.beginPath(); ctx.ellipse(o.x, o.y + 1, 11 * zm, 5 * zm, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = p.color; ctx.strokeStyle = shade(p.color, -22); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.ellipse(o.x, o.y - 3 * zm, 10.5 * zm, 6.5 * zm, 0, 0, 7); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = shade(p.color, 10); ctx.beginPath(); ctx.ellipse(o.x, o.y - 6 * zm, 6 * zm, 3 * zm, 0, 0, 7); ctx.fill();
+      return true;
+    }
+    if (p.type === 'toybox') {
+      box(p.gx, p.gy, 0.7, 0.6, 5.5, '#93c5fd', '#7fb4f2', '#5f9ae0', 'rgba(60,90,130,.35)', z);
+      box(p.gx - 0.03, p.gy - 0.03, 0.76, 0.66, 1.2, '#fde68a', '#f5d36a', '#e4bd4a', null, z + 5.5);
+      return true;
+    }
+    if (p.type === 'horse') {
+      const o = iso(p.gx + 0.3, p.gy + 0.3, z);
+      ctx.strokeStyle = '#b08968'; ctx.lineWidth = Math.max(1.6, 2 * zm);
+      ctx.beginPath(); ctx.arc(o.x, o.y - 9 * zm, 11 * zm, Math.PI * 0.15, Math.PI * 0.85); ctx.stroke();
+      ctx.fillStyle = '#e2b07a';
+      ctx.beginPath(); ctx.roundRect(o.x - 7 * zm, o.y - 15 * zm, 14 * zm, 7 * zm, 3 * zm); ctx.fill();
+      ctx.beginPath(); ctx.roundRect(o.x + 4 * zm, o.y - 24 * zm, 5 * zm, 10 * zm, 2 * zm); ctx.fill();
+      ctx.fillStyle = '#7c4a1e'; ctx.fillRect(o.x + 5 * zm, o.y - 25 * zm, 3 * zm, 6 * zm);
+      ctx.fillStyle = '#243028'; ctx.beginPath(); ctx.arc(o.x + 7.4 * zm, o.y - 21 * zm, 0.8 * zm, 0, 7); ctx.fill();
+      ctx.fillStyle = '#E85D75'; ctx.fillRect(o.x - 3 * zm, o.y - 16.5 * zm, 6 * zm, 2 * zm);
+      return true;
+    }
+    if (p.type === 'kidart') {
+      const o = iso(p.gx, p.gy + 0.02, z);
+      const w = 14 * zm, h = 12 * zm;
+      ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#e6e0d4'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.roundRect(o.x, o.y - h, w, h, 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(o.x + w / 2, o.y - h / 2, 3.6 * zm, 0, 7); ctx.fill();
+      ctx.strokeStyle = p.color; ctx.lineWidth = Math.max(1, zm);
+      for (let i = 0; i < 8; i++) {
+        const an = i * Math.PI / 4;
+        ctx.beginPath(); ctx.moveTo(o.x + w / 2 + Math.cos(an) * 4.6 * zm, o.y - h / 2 + Math.sin(an) * 4.6 * zm);
+        ctx.lineTo(o.x + w / 2 + Math.cos(an) * 5.6 * zm, o.y - h / 2 + Math.sin(an) * 5.6 * zm); ctx.stroke();
+      }
+      return true;
+    }
+    return false;
+  }
+  // Outdoor dog park props. Returns true when the prop was handled.
+  function drawParkProp(p, t) {
+    const zm = view.zoom, z = p.z || 0;
+    if (p.type === 'path') {
+      floorQuad(p.gx, p.gy, p.gw, p.gh, z + 0.35, '#dcd3c3', '#c9bfae');
+      return true;
+    }
+    if (p.type === 'fence') {
+      // Timber picket fence: warm oak posts with two horizontal rails.
+      const post = (x, y) => box(x - 0.08, y - 0.08, 0.16, 0.16, 11, '#e2c29a', '#c9a071', '#a9814f', 'rgba(90,60,30,.35)', z);
+      const rail = (x0, y0, x1, y1) => {
+        [4.2, 8.8].forEach((h) => {
+          const a = iso(x0, y0, z + h), b = iso(x1, y1, z + h);
+          ctx.strokeStyle = '#b8905f'; ctx.lineWidth = Math.max(2, 2.6 * zm);
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+          ctx.strokeStyle = '#e2c29a'; ctx.lineWidth = Math.max(1, 1.1 * zm);
+          ctx.beginPath(); ctx.moveTo(a.x, a.y - 1); ctx.lineTo(b.x, b.y - 1); ctx.stroke();
+        });
+      };
+      if (p.side === 'back') {
+        // North and west runs (behind the lawn), west run split by the gate.
+        rail(p.x0, p.y0, p.x1, p.y0);
+        rail(p.x0, p.y0, p.x0, p.gate[0]);
+        rail(p.x0, p.gate[1], p.x0, p.y1);
+        for (let x = p.x0; x <= p.x1 + 0.01; x += 1) post(x, p.y0);
+        for (let y = p.y0 + 1; y < p.y1; y += 1) if (y < p.gate[0] || y > p.gate[1]) post(p.x0, y);
+        // Gate: two posts and a picket gate leaf, latched shut.
+        post(p.x0, p.gate[0]); post(p.x0, p.gate[1]);
+        box(p.x0 - 0.05, p.gate[0], 0.1, p.gate[1] - p.gate[0], 9.5, '#f1dcc0', '#e2c29a', '#c9a071', 'rgba(90,60,30,.35)', z + 1.2);
+        const g = iso(p.x0, (p.gate[0] + p.gate[1]) / 2, z + 6.5);
+        ctx.fillStyle = '#C4A265'; ctx.beginPath(); ctx.arc(g.x, g.y, 1.6 * zm, 0, 7); ctx.fill();
+      } else {
+        // East and south runs (in front of the lawn).
+        rail(p.x1, p.y0, p.x1, p.y1);
+        rail(p.x0, p.y1, p.x1, p.y1);
+        for (let x = p.x0; x <= p.x1 + 0.01; x += 1) post(x, p.y1);
+        for (let y = p.y0 + 1; y < p.y1; y += 1) post(p.x1, y);
+      }
+      return true;
+    }
+    if (p.type === 'parksign') {
+      box(p.gx, p.gy, 0.12, 0.12, 16, '#f8fafc', '#e2e8f0', '#cbd5e1', null, z);
+      const o = iso(p.gx + 0.06, p.gy + 0.06, z + 16);
+      ctx.font = '700 ' + Math.max(8, 9 * zm) + 'px sans-serif';
+      const w = ctx.measureText(p.text).width + 14 * zm, h = 14 * zm;
+      ctx.fillStyle = '#fffdf8'; ctx.strokeStyle = '#C4A265'; ctx.lineWidth = Math.max(1, 1.2 * zm);
+      ctx.beginPath(); ctx.roundRect(o.x - w / 2, o.y - h, w, h, 3); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#3f7d68'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(p.text, o.x, o.y - h / 2 + 0.5);
+      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      logoMark(o.x - w / 2 + 6 * zm, o.y - h / 2, 3.2 * zm);
+      return true;
+    }
+    if (p.type === 'tree') {
+      const r = p.r || 1;
+      const o = iso(p.gx, p.gy, z);
+      ctx.fillStyle = 'rgba(60,80,50,.18)'; ctx.beginPath(); ctx.ellipse(o.x + 4 * zm, o.y + 2, 16 * r * zm, 7 * r * zm, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = '#8b5e3c'; ctx.fillRect(o.x - 2.2 * zm, o.y - 22 * r * zm, 4.4 * zm, 22 * r * zm);
+      ctx.fillStyle = '#6f4a2e'; ctx.fillRect(o.x + 0.6 * zm, o.y - 22 * r * zm, 1.6 * zm, 22 * r * zm);
+      [[0, -34, 15, '#4f8a6d'], [-9, -28, 11, '#5f9d7d'], [9, -27, 12, '#4f8a6d'], [0, -24, 12, '#6faa8a'], [-4, -40, 9, '#5f9d7d']].forEach(([dx, dy, rr, c]) => {
+        ctx.fillStyle = c; ctx.beginPath(); ctx.arc(o.x + dx * r * zm, o.y + dy * r * zm, rr * r * zm, 0, 7); ctx.fill();
+      });
+      return true;
+    }
+    if (p.type === 'kennel') {
+      box(p.gx, p.gy, 1.3, 1.1, 12, '#fff7ed', '#f2e4d0', '#e0cfb6', 'rgba(148,163,184,.45)', z);
+      // Gable roof: two slanted faces meeting on the ridge.
+      const r0 = iso(p.gx - 0.1, p.gy + 0.55, z + 19), r1 = iso(p.gx + 1.4, p.gy + 0.55, z + 19);
+      const n0 = iso(p.gx - 0.1, p.gy - 0.1, z + 12), n1 = iso(p.gx + 1.4, p.gy - 0.1, z + 12);
+      const s0 = iso(p.gx - 0.1, p.gy + 1.2, z + 12), s1 = iso(p.gx + 1.4, p.gy + 1.2, z + 12);
+      poly([n0, n1, r1, r0], '#9fc5a6', 'rgba(60,90,70,.35)');
+      poly([r0, r1, s1, s0], '#7fb08a', 'rgba(60,90,70,.35)');
+      const d = iso(p.gx + 0.65, p.gy + 1.1, z);
+      ctx.fillStyle = '#4b3a2c';
+      ctx.beginPath(); ctx.moveTo(d.x - 5 * zm, d.y); ctx.lineTo(d.x - 5 * zm, d.y - 6 * zm); ctx.arc(d.x, d.y - 6 * zm, 5 * zm, Math.PI, 0); ctx.lineTo(d.x + 5 * zm, d.y); ctx.closePath(); ctx.fill();
+      const tag = iso(p.gx + 0.65, p.gy + 1.1, z + 15.5);
+      ctx.font = '700 ' + Math.max(6, 6.5 * zm) + 'px sans-serif'; ctx.fillStyle = '#3f4a3c'; ctx.textAlign = 'center';
+      ctx.fillText('JOY & PUPS', tag.x, tag.y); ctx.textAlign = 'left';
+      return true;
+    }
+    if (p.type === 'bowl') {
+      const o = iso(p.gx, p.gy, z);
+      ctx.fillStyle = '#e2e8f0'; ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.ellipse(o.x, o.y - 1.5 * zm, 5.2 * zm, 2.6 * zm, 0, 0, 7); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = p.color; ctx.beginPath(); ctx.ellipse(o.x, o.y - 1.8 * zm, 3.6 * zm, 1.7 * zm, 0, 0, 7); ctx.fill();
+      return true;
+    }
+    if (p.type === 'bench') {
+      box(p.gx, p.gy, 1.5, 0.45, 5.5, '#d9b991', '#c7a67c', '#b08f66', 'rgba(120,90,60,.4)', z);
+      box(p.gx, p.gy, 1.5, 0.1, 5.5, '#d9b991', '#c7a67c', '#b08f66', null, z + 5.5);
+      return true;
+    }
+    if (p.type === 'jumpbar') {
+      box(p.gx, p.gy, 0.1, 0.1, 7, '#60a5fa', '#4f8fe0', '#3c78c8', null, z);
+      box(p.gx + 1.2, p.gy, 0.1, 0.1, 7, '#60a5fa', '#4f8fe0', '#3c78c8', null, z);
+      const a = iso(p.gx + 0.05, p.gy + 0.05, z + 4.5), b = iso(p.gx + 1.25, p.gy + 0.05, z + 4.5);
+      ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = Math.max(2, 2.4 * zm);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      return true;
+    }
+    if (p.type === 'tunnel') {
+      const o0 = iso(p.gx, p.gy + 0.3, z), o1 = iso(p.gx + 1.6, p.gy + 0.3, z);
+      ctx.strokeStyle = '#fb923c'; ctx.lineWidth = Math.max(5, 7 * zm); ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(o0.x, o0.y - 5 * zm); ctx.lineTo(o1.x, o1.y - 5 * zm); ctx.stroke();
+      ctx.lineCap = 'butt';
+      ctx.fillStyle = '#7c2d12';
+      ctx.beginPath(); ctx.ellipse(o0.x, o0.y - 5 * zm, 2.2 * zm, 3.6 * zm, 0, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(o1.x, o1.y - 5 * zm, 2.2 * zm, 3.6 * zm, 0, 0, 7); ctx.fill();
+      return true;
+    }
+    if (p.type === 'dogball') {
+      const o = iso(p.gx, p.gy, z);
+      ctx.fillStyle = 'rgba(60,80,50,.18)'; ctx.beginPath(); ctx.ellipse(o.x, o.y + 1, 4 * zm, 1.8 * zm, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(o.x, o.y - 3 * zm, 3.4 * zm, 0, 7); ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = Math.max(1, zm);
+      ctx.beginPath(); ctx.arc(o.x, o.y - 3 * zm, 2.2 * zm, Math.PI * 0.2, Math.PI * 0.8); ctx.stroke();
+      return true;
+    }
+    if (p.type === 'flowers') {
+      const cs = ['#f472b6', '#fbbf24', '#f87171', '#a78bfa'];
+      for (let i = 0; i < Math.round(p.gw * 4); i++) {
+        const o = iso(p.gx + i * 0.25, p.gy + ((i % 2) * 0.18), z);
+        ctx.strokeStyle = '#4f8a6d'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(o.x, o.y - 5 * zm); ctx.stroke();
+        ctx.fillStyle = cs[i % cs.length]; ctx.beginPath(); ctx.arc(o.x, o.y - 6 * zm, 1.7 * zm, 0, 7); ctx.fill();
+      }
+      return true;
+    }
+    return false;
+  }
   function drawProp(p, t) {
     if (p.type === 'box') { box(p.gx, p.gy, p.gw, p.gh, p.h, p.top, p.left, p.right, p.stroke, p.z); return; }
     if (p.type === 'chair') { drawChair(p); return; }
@@ -1397,6 +1887,7 @@ Add a prop
       ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(o.x, o.y + 22 * view.zoom, 8 * view.zoom, 4 * view.zoom, 0, 0, 7); ctx.fill();
       return;
     }
+    if (drawPlayProp(p, t) || drawParkProp(p, t)) return;
     if (p.type === 'monitor' || p.type === 'laptop' || p.type === 'play') {
       const o = iso(p.gx, p.gy, p.z);
       const laptop = p.type === 'laptop';
@@ -1464,18 +1955,6 @@ Add a prop
       deviceChip({ label: p.label, gx: x, gy: y, z: p.z }, 17);
       return;
     }
-    if (p.type === 'screenbank') {
-      for (let i = 0; i < (p.n || 1); i++) {
-        const x = p.gx + i * 1.55;
-        box(x + 0.42, p.gy, 0.14, 0.08, 1.4, '#e7e0d2', '#d4ccbe', '#c4baa8', null, p.z);
-        box(x, p.gy, 1.15, 0.07, 4.4, '#fffdf8', '#f3eee6', '#e6dece', null, p.z + 1.4);
-        const a = iso(x + 0.12, p.gy + 0.02, p.z + 5.2);
-        const b = iso(x + 1.02, p.gy + 0.02, p.z + 5.2);
-        const d = iso(x + 0.12, p.gy + 0.02, p.z + 2.0);
-        drawCuteScreen((a.x + b.x) / 2, (a.y + d.y) / 2, Math.max(16, Math.abs(b.x - a.x) * 0.82), Math.max(12, Math.abs(a.y - d.y) * 0.72));
-      }
-      return;
-    }
     if (p.type === 'brands') {
       const names = ['Allergan', 'Ultherapy', 'Profhilo', 'Rejuran', 'Lutronic', 'Candela', 'Asclepion', 'Teosyal', 'Dermapen', 'PDRN', 'Thermage', 'Radiesse'];
       names.forEach((name, i) => {
@@ -1519,9 +1998,10 @@ Add a prop
       drawMenuKiosk(p);
       return;
     }
-    if (p.type === 'showcase') { drawPharmShowcase(p, t); return; }
-    if (p.type === 'pharmwall') { drawPharmBrandWall(p); return; }
-    if (p.type === 'pharmkiosk') { drawPharmKiosk(p); return; }
+    if (p.type === 'pharmshelf') { drawPharmShelf(p); return; }
+    if (p.type === 'pharmsign') { drawPharmSign(p); return; }
+    if (p.type === 'pharmfridge') { drawPharmFridge(p, t); return; }
+    if (p.type === 'pharmcounter') { drawPharmCounter(p); return; }
     if (p.type === 'stairs') {
       const x = 10.78, w = 2.15, n = 12, riser = 92 / n, yTop = 6.35, yBot = 9.7;
       const depth = (yBot - yTop) / n;
@@ -1751,8 +2231,14 @@ Add a prop
       ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(a.x - 10 * zm, a.y + 6 * zm, b.x, b.y); ctx.stroke();
       ctx.fillStyle = (Math.floor(t * 1.8) % 2) ? '#3f7d68' : '#5FB382';
       ctx.beginPath(); ctx.arc(b.x, b.y, 2.4 * zm, 0, 7); ctx.fill();
-      addPharmHot(x, y, x + 1.05, y + 0.72, z, 12);
       lift = 24;
+    } else if (k === 'cooler') {
+      box(x, y, 0.55, 0.5, 6.5, W1, L1, R1, null, z);
+      box(x + 0.05, y + 0.05, 0.45, 0.4, 0.4, '#8EC5FF', '#74b2ee', '#5f9fe0', null, z + 6.5);
+      const a = iso(x + 0.5, y + 0.2, z + 6), b = iso(x - 0.15, y + 0.7, z + 3);
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = Math.max(1, 1.6 * zm);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(a.x + 4 * zm, a.y + 10 * zm, b.x, b.y); ctx.stroke();
+      lift = 15;
     } else if (k === 'fridge') {
       box(x, y, 1.1, 0.86, 14, '#f7f9fb', '#dfe6ec', '#c3cdd6', null, z);
       box(x + 0.53, y + 0.8, 0.04, 0.05, 13.2, '#b7c4cf', '#9fadb9', '#8797a5', null, z + 0.4);
@@ -1855,6 +2341,7 @@ Add a prop
     } else {
       c.beginPath(); c.roundRect(p.x - 6.2 * sc, y - 18 * sc, 12.4 * sc, 12 * sc, 3.5 * sc); c.fill(); c.stroke();
     }
+    if (s.kid) return; // no staff badge or logo on children
     if (c === ctx) logoMark(p.x + 2.2 * sc, y - 12.2 * sc, 2.3 * sc);
     c.fillStyle = '#ffffff';
     c.fillRect(p.x + 2.6 * sc, y - 14.5 * sc, 3.4 * sc, 2.6 * sc);
@@ -1879,6 +2366,8 @@ Add a prop
     Marketing: '#c4b0ef',
     Facilities: '#b7c4bc',
     Wellness: '#8ed0b4',
+    Family: '#fde68a',
+    Dogs: '#f6d8a8',
     Guest: '#e7e1d6'
   };
   function drawNote(text, x, y) {
@@ -1892,7 +2381,7 @@ Add a prop
     ctx.fillText(text, x - bw / 2 + 6, y + 12);
   }
   function drawReclined(s, t) {
-    const p = iso(s.gx, s.gy, s.z);
+    const p = iso(s.gx, s.gy, visZ(s));
     const sc = Math.max(0.75, view.zoom);
     ctx.fillStyle = 'rgba(80,70,50,.14)';
     ctx.beginPath(); ctx.ellipse(p.x, p.y + 2, 16 * sc, 5 * sc, 0, 0, 7); ctx.fill();
@@ -1906,13 +2395,86 @@ Add a prop
     ctx.beginPath(); ctx.arc(p.x - 8 * sc, p.y - 7 * sc, 4.6 * sc, Math.PI * 1.05, Math.PI * 1.95); ctx.fill();
     if (s.say && t < s.sayUntil) drawNote(s.say, p.x, p.y - 26 * sc);
   }
+  // Cartoon golden retriever, side view, facing s.face (1 = east/right, -1 = west/left).
+  function drawDogSprite(s, p, y, sc, t, c) {
+    c = c || ctx;
+    const f = s.face || 1;
+    const walking = s.state === 'WALKING';
+    const coat = '#e0a95a', coatD = '#c98f3f', coatL = '#f1c98a';
+    const legSwing = walking ? Math.sin(t * 11 + s.phase) * 3 : 0;
+    const wag = Math.sin(t * (walking ? 14 : 7) + s.phase) * 4;
+    c.lineWidth = 1; c.strokeStyle = 'rgba(80,60,30,.35)';
+    // Legs.
+    c.fillStyle = coatD;
+    [[-7, legSwing], [-3, -legSwing], [3, legSwing], [7, -legSwing]].forEach(([dx, sw]) => {
+      c.beginPath(); c.roundRect(p.x + dx * f * sc - 1.6 * sc + sw * sc * 0.4, y - 7 * sc, 3.2 * sc, 7 * sc, 1.4 * sc); c.fill();
+    });
+    // Tail (wags).
+    c.strokeStyle = coat; c.lineWidth = 2.6 * sc; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(p.x - 10 * f * sc, y - 11 * sc); c.quadraticCurveTo(p.x - 15 * f * sc, y - (14 + wag) * sc, p.x - 17 * f * sc, y - (18 + wag * 1.4) * sc); c.stroke();
+    c.lineCap = 'butt'; c.lineWidth = 1; c.strokeStyle = 'rgba(80,60,30,.35)';
+    // Body.
+    c.fillStyle = coat;
+    c.beginPath(); c.ellipse(p.x, y - 11 * sc, 11 * sc, 6.2 * sc, 0, 0, 7); c.fill(); c.stroke();
+    c.fillStyle = coatL;
+    c.beginPath(); c.ellipse(p.x, y - 8.5 * sc, 7.5 * sc, 3 * sc, 0, 0, 7); c.fill();
+    // Head + ears + muzzle.
+    const hx = p.x + 10 * f * sc, hy = y - 17 * sc;
+    c.fillStyle = coatD;
+    c.beginPath(); c.ellipse(hx - 4.5 * f * sc, hy + 1.5 * sc, 2.6 * sc, 5 * sc, 0, 0, 7); c.fill(); c.stroke();
+    c.fillStyle = coat;
+    c.beginPath(); c.arc(hx, hy, 6 * sc, 0, 7); c.fill(); c.stroke();
+    c.fillStyle = coatL;
+    c.beginPath(); c.ellipse(hx + 4 * f * sc, hy + 2 * sc, 4 * sc, 3 * sc, 0, 0, 7); c.fill(); c.stroke();
+    c.fillStyle = '#2b211a';
+    c.beginPath(); c.arc(hx + 7.2 * f * sc, hy + 1.2 * sc, 1.5 * sc, 0, 7); c.fill();
+    c.beginPath(); c.arc(hx + 1.6 * f * sc, hy - 1.4 * sc, 1 * sc, 0, 7); c.fill();
+    // Mouth / tongue when playing.
+    if (s.state === 'PLAYING' || walking) {
+      c.fillStyle = '#f26d85';
+      c.beginPath(); c.ellipse(hx + 4.5 * f * sc, hy + 5 * sc, 1.4 * sc, 2 * sc, 0, 0, 7); c.fill();
+    }
+    // Collar.
+    c.fillStyle = s.collar || '#E85D75';
+    c.beginPath(); c.roundRect(hx - 6 * f * sc - (f < 0 ? 6 * sc : 0), hy + 4.2 * sc, 6 * sc, 2 * sc, 1 * sc); c.fill();
+    c.fillStyle = '#C4A265'; c.beginPath(); c.arc(hx - 3 * f * sc, hy + 6.8 * sc, 1.1 * sc, 0, 7); c.fill();
+  }
+  function drawDog(s, t) {
+    const p = iso(s.gx, s.gy, 0);
+    const sc = Math.max(0.75, view.zoom) * (s.scale || 1);
+    const bob = s.state === 'WALKING' ? Math.abs(Math.sin(t * 11 + s.phase)) * 1.8 : 0;
+    const y = p.y - bob;
+    ctx.fillStyle = 'rgba(60,80,50,.18)';
+    ctx.beginPath(); ctx.ellipse(p.x, p.y + 1, 12 * sc, 4.5 * sc, 0, 0, 7); ctx.fill();
+    if (s === selected) {
+      ctx.strokeStyle = '#3f7d68'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.ellipse(p.x, p.y + 1, 14 * sc, 5.5 * sc, 0, 0, 7); ctx.stroke();
+    }
+    if (s.state === 'RESTING') {
+      // Lying down: flatten the body, head low.
+      ctx.save(); ctx.translate(p.x, y); ctx.scale(1, 0.72); ctx.translate(-p.x, -y);
+      drawDogSprite(s, p, y + 2 * sc, sc, t);
+      ctx.restore();
+    } else drawDogSprite(s, p, y, sc, t);
+    const showTag = view.zoom >= 0.95 || s === selected || s === hover;
+    if (showTag) {
+      ctx.font = '700 ' + Math.max(10, 11 * Math.min(Math.max(0.75, view.zoom), 1.15)) + 'px sans-serif';
+      const tw = ctx.measureText(s.name).width + 12, tx = p.x - tw / 2, ty = y - 36 * sc;
+      ctx.fillStyle = 'rgba(60,50,30,.12)'; round(tx + 1, ty + 2, tw, 16, 8);
+      ctx.fillStyle = TAG.Dogs; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.roundRect(tx, ty, tw, 16, 8); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#2c3a32'; ctx.fillText(s.name, tx + 6, ty + 12);
+      if (s.say && t < s.sayUntil) drawNote(s.say, p.x, ty - 20);
+    } else if (s.say && t < s.sayUntil && view.zoom >= 0.8) drawNote(s.say, p.x, y - 30 * sc);
+  }
   function drawSim(s, t) {
     if (s.recline) { drawReclined(s, t); return; }
+    if (s.pet) { drawDog(s, t); return; }
     const walking = s.state === 'WALKING';
     const bob = walking ? Math.abs(Math.sin(t * (s.rush ? 16 : 9) + s.phase)) * 2.4 : Math.sin(t * 1.6 + s.phase) * 0.6;
     const step = walking ? Math.sin(t * (s.rush ? 16 : 9) + s.phase) : 0;
-    const p = iso(s.gx, s.gy, s.z);
-    const sc = Math.max(0.75, view.zoom);
+    const p = iso(s.gx, s.gy, visZ(s));
+    const sc = Math.max(0.75, view.zoom) * (s.scale || 1);
     const y = p.y - bob;
     ctx.fillStyle = (s.vip || s.vvip) ? 'rgba(196,162,101,.45)' : 'rgba(80,70,50,.16)';
     ctx.beginPath(); ctx.ellipse(p.x, p.y + 1, 9 * sc, 4.2 * sc, 0, 0, 7); ctx.fill();
@@ -1958,6 +2520,7 @@ Add a prop
     if (s.say && t < s.sayUntil && (view.zoom >= 0.88 || s === selected || important)) drawNote(s.say, p.x, ty - 20);
   }
   function drawNameplate(r) {
+    if (r.id === 'PH-402') return;
     if (r.label && view.zoom < 1.12) return;
     if (!r.label && view.zoom < 0.82 && activeFocus !== r.id) return;
     const p = r.id === 'R-101'
@@ -1980,6 +2543,11 @@ Add a prop
     ctx.save(); ctx.globalAlpha = alpha;
     if (z === 0) {
       floorQuad(1, 1, 35, 28, 0, '#f3ece1', '#e7dfd0');
+      // East wing (family playroom) floor plate, flush with the main building.
+      floorQuad(36, 10, 7, 8.5, 0, '#f3ece1', '#e7dfd0');
+      // Outdoor lawn for the dog park, slightly proud of the ground with a mown-stripe grid.
+      floorQuad(36.6, 19.6, 8.8, 8.8, 0.25, '#d6ead0', null);
+      floorQuad(37, 20, 8, 8, 0.3, '#cfe3bb', '#c3d9ad');
       ctx.strokeStyle = COL.mint; ctx.globalAlpha *= 0.8;
       [[2, 9.4, 33, 0.08],[10.4, 2, 0.08, 26],[22.4, 10, 0.08, 18]].forEach(([x, y, w, h]) => floorQuad(x, y, w, h, 0.2, COL.sage, null));
       if (!lowQ) {
@@ -1990,7 +2558,8 @@ Add a prop
         }
       }
       ctx.globalAlpha = alpha;
-      [[1.8, 7.65],[9.15, 7.65],[22.65, 7.65]].forEach(([x, y]) => box(x, y, 0.42, 0.42, 90, '#f8fafc', '#e2e8f0', '#cbd5e1', '#94a3b8', 0));
+      // Structural columns sit directly under the 2F slab edge (slab underside is z 90).
+      [[1.62, 6.06], [10.21, 6.06], [13.07, 6.06], [22.76, 6.06]].forEach(([x, y]) => box(x, y, 0.42, 0.42, 90, '#f8fafc', '#e2e8f0', '#cbd5e1', '#94a3b8', 0));
     }
     if (z === 92) {
       const slab = (x, y, w, h) => box(x, y, w, h, 2, '#fffdf8', '#e7e1d6', '#d5cec1', 'rgba(180,170,150,.28)', 90);
@@ -2012,18 +2581,31 @@ Add a prop
         }
       }
     }
+    const segs = (from, to, gaps) => {
+      const out = []; let cur = from;
+      (gaps || []).forEach(([g0, g1]) => { if (g0 > cur) out.push([cur, g0]); cur = Math.max(cur, g1); });
+      if (cur < to) out.push([cur, to]);
+      return out;
+    };
     if (z === 0) {
+      const gaps1 = { 'K-106': { w: [[13.45, 14.6]] } };
       ROOMS.filter((r) => r.shell && !r.z).forEach((r) => {
+        const g = gaps1[r.id] || {};
         box(r.gx, r.gy, r.gw, 0.18, 26, '#ffffff', '#f7f4ee', '#e7e1d6', 'rgba(180,170,150,.35)', 0);
         box(r.gx, r.gy, r.gw, 0.18, 1.4, r.wall, r.wall, shade(r.wall, -12), null, 24.6);
-        box(r.gx, r.gy, 0.18, r.gh, 26, '#ffffff', '#f4f0e8', r.wall, 'rgba(180,170,150,.28)', 0);
+        segs(r.gy, r.gy + r.gh, g.w).forEach(([a, b]) => box(r.gx, a, 0.18, b - a, 26, '#ffffff', '#f4f0e8', r.wall, 'rgba(180,170,150,.28)', 0));
+        (g.w || []).forEach(([a, b]) => box(r.gx, a, 0.18, b - a, 6, '#ffffff', '#f4f0e8', r.wall, null, 20));
       });
     } else {
+      const gaps2 = { 'N-401': { w: [[1.45, 2.55]] }, 'PH-402': { w: [[4.45, 5.55]], n: [[22.15, 23.05]] } };
       ROOMS.filter((r) => r.shell && r.z === 92).forEach((r) => {
         floorNotch(r.gx, r.gy, r.gw, r.gh, 92);
-        box(r.gx, r.gy, r.gw, 0.18, 26, '#ffffff', '#f7f4ee', '#e7e1d6', null, 92);
+        const g = gaps2[r.id] || {};
+        segs(r.gx, r.gx + r.gw, g.n).forEach(([a, b]) => box(a, r.gy, b - a, 0.18, 26, '#ffffff', '#f7f4ee', '#e7e1d6', null, 92));
+        (g.n || []).forEach(([a, b]) => box(a, r.gy, b - a, 0.18, 6, '#ffffff', '#f7f4ee', '#e7e1d6', null, 112));
         box(r.gx, r.gy, r.gw, 0.18, 1.4, r.wall, r.wall, shade(r.wall, -12), null, 116.6);
-        box(r.gx, r.gy, 0.18, r.gh, 26, '#ffffff', '#f4f0e8', r.wall, null, 92);
+        segs(r.gy, r.gy + r.gh, g.w).forEach(([a, b]) => box(r.gx, a, 0.18, b - a, 26, '#ffffff', '#f4f0e8', r.wall, null, 92));
+        (g.w || []).forEach(([a, b]) => box(r.gx, a, 0.18, b - a, 6, '#ffffff', '#f4f0e8', r.wall, null, 112));
       });
     }
     ROOMS.filter((r) => (r.z || 0) === z && (r.shell || r.label)).forEach(drawNameplate);
@@ -2039,7 +2621,7 @@ Add a prop
       if (probe.x < -80 || probe.y < -80 || probe.x > W + 80 || probe.y > H + 80) return;
       drawProp(p, simT);
     });
-    actors.filter((s) => !s.dead && ((s.z >= 40 ? 92 : 0) === z)).sort((a, b) => (a.gx + a.gy) - (b.gx + b.gy)).forEach((s) => drawSim(s, simT));
+    actors.filter((s) => !s.dead && ((visZ(s) >= 40 ? 92 : 0) === z)).sort((a, b) => (a.gx + a.gy) - (b.gx + b.gy)).forEach((s) => drawSim(s, simT));
     ctx.restore();
   }
 
@@ -2057,75 +2639,113 @@ Add a prop
   function pharmHotAt(pt) {
     return pharmHots.some((h) => pt.x >= h.x && pt.x <= h.x + h.w && pt.y >= h.y && pt.y <= h.y + h.h);
   }
-  function drawPharmShowcase(p, t) {
-    const x = p.gx, y = p.gy, z = p.z || 0, gw = p.gw || 4, gh = p.gh || 1.2, zm = view.zoom;
-    box(x, y + gh * 0.55, gw, gh * 0.42, 0.55, '#e7e0d2', '#d4ccbe', '#c4baa8', null, z);
-    box(x + 0.08, y + 0.08, gw - 0.16, gh - 0.12, 0.35, '#fffdf8', '#f3eee6', '#e4ddd0', null, z + 0.55);
-    const glassH = gh * 0.72;
-    box(x + 0.12, y + 0.12, gw - 0.24, 0.08, glassH, 'rgba(255,255,255,.92)', 'rgba(230,224,212,.85)', 'rgba(200,190,175,.7)', null, z + 0.9);
-    const brands = ['Mounjaro', 'Wegovy', 'LHA La Peel', 'SPF kits'];
-    brands.forEach((name, i) => {
-      const bx = x + 0.35 + (i % 2) * (gw * 0.48);
-      const by = y + 0.28 + Math.floor(i / 2) * (gh * 0.38);
-      const cols = ['#e7f6ef', '#fdecef', '#e0f2fe', '#fff7ed'];
-      box(bx, by, 0.42, 0.32, 0.55, cols[i], shade(cols[i], -12), shade(cols[i], -24), null, z + 1.1);
-      if (view.zoom >= 1.1) {
-        const o = iso(bx + 0.08, by + 0.12, z + 1.85);
-        ctx.font = '700 ' + Math.max(7, 8 * zm) + 'px sans-serif';
-        ctx.fillStyle = '#3f4a3c';
-        ctx.fillText(name, o.x, o.y);
-      }
-    });
-    const led = (Math.floor(t * 2) % 2) ? '#F4A7B9' : '#3f7d68';
-    box(x + gw - 0.22, y + 0.06, 0.12, 0.06, 0.25, led, shade(led, -18), shade(led, -32), null, z + glassH + 0.6);
-    const o = iso(x + gw / 2, y + gh * 0.35, z + glassH + 2);
-    const sc = Math.min(view.zoom, 1.25);
-    ctx.textAlign = 'center';
+  // Wall sign above the brand shelf: green cross + PHARMACY wordmark on a plate.
+  function drawPharmSign(p) {
+    const x = p.gx, y = p.gy, z = p.z || 0, w = 3.6, h = 4.5, z0 = z + 17.5;
+    box(x, y, w, 0.05, h, '#fffdf8', '#f6f0e6', '#e6dece', null, z0);
+    const a = iso(x + 0.1, y + 0.05, z0 + h), b = iso(x + w - 0.1, y + 0.05, z0 + h), d = iso(x + 0.1, y + 0.05, z0 + 0.3);
+    const cx = (a.x + b.x) / 2, cy = (a.y + d.y) / 2, sc = Math.min(view.zoom, 1.3), span = b.x - a.x;
+    const crossX = a.x + span * 0.12, r = Math.max(3, 4.2 * sc);
     ctx.fillStyle = '#3f7d68';
-    ctx.font = '700 ' + Math.max(8, 10 * sc) + 'px "Palatino Linotype", Georgia, serif';
-    ctx.fillText('Aesthetic showcase', o.x, o.y);
-    ctx.fillStyle = '#8a7350';
-    ctx.font = '600 ' + Math.max(7, 8 * sc) + 'px sans-serif';
-    ctx.fillText('Tap to shop', o.x, o.y + 11 * sc);
-    ctx.textAlign = 'left';
-    addPharmHot(x, y, x + gw, y + gh, z, 14);
-  }
-  function drawPharmBrandWall(p) {
-    const x = p.gx, y = p.gy, z = p.z || 0, zm = view.zoom;
-    const names = ['Mounjaro', 'Wegovy', 'LHA La Peel', 'Skincare'];
-    names.forEach((name, i) => {
-      const gx = x + i * 2.15;
-      const gz = z + 7.2;
-      box(gx, y, 2.0, 0.05, 2.6, '#fffdf8', '#e6dece', '#d5cbb6', null, gz);
-      box(gx + 0.06, y, 0.08, 0.04, 1.3, COL.rose, shade(COL.rose, -14), shade(COL.rose, -28), null, gz + 0.55);
-      if (view.zoom < 1.2) return;
-      const o = iso(gx + 0.18, y + 0.02, gz + 1.5);
-      ctx.font = '700 ' + Math.max(7, 8 * zm) + 'px sans-serif';
-      ctx.fillStyle = '#3f4a3c';
-      ctx.fillText(name, o.x, o.y);
-    });
-  }
-  function drawPharmKiosk(p) {
-    const x = p.gx, y = p.gy, z = p.z || 0;
-    box(x + 0.12, y + 0.48, 0.24, 0.24, 0.65, '#d9d3c6', '#c4b8a4', '#b0a48e', null, z);
-    box(x + 0.88, y + 0.48, 0.24, 0.24, 0.65, '#d9d3c6', '#c4b8a4', '#b0a48e', null, z);
-    box(x, y + 0.38, 1.28, 0.48, 0.42, '#e7e0d2', '#d4ccbe', '#c4baa8', null, z + 0.65);
-    box(x, y, 1.3, 0.2, 7.8, '#fffdf8', '#f3eee6', '#e6dece', null, z + 4.2);
-    const screenPt = iso(x + 0.66, y + 0.11, z + 8.2);
-    drawCuteScreen(screenPt.x, screenPt.y, 30 * view.zoom, 22 * view.zoom);
-    const o = iso(x + 0.66, y + 0.11, z + 8);
-    const sc = Math.min(view.zoom, 1.3);
+    ctx.fillRect(crossX - r * 0.3, cy - r, r * 0.6, r * 2);
+    ctx.fillRect(crossX - r, cy - r * 0.3, r * 2, r * 0.6);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#3f7d68';
-    ctx.font = '700 ' + Math.max(9, 11 * sc) + 'px "Palatino Linotype", Georgia, serif';
-    ctx.fillText('Pharmacy shop', o.x, o.y + 13 * sc);
+    ctx.fillStyle = '#2c3a32';
+    ctx.font = '700 ' + Math.max(9, 12 * sc) + 'px "Palatino Linotype", Georgia, serif';
+    ctx.fillText('P H A R M A C Y', cx + span * 0.08, cy - 3 * sc);
     ctx.fillStyle = '#8a7350';
-    ctx.font = '600 ' + Math.max(7, 9 * sc) + 'px sans-serif';
-    ctx.fillText('Tap to open', o.x, o.y + 25 * sc);
+    ctx.font = '600 ' + Math.max(6, 6.5 * sc) + 'px sans-serif';
+    ctx.fillText('SKINDERMA  ·  AESTHETIC CLINIC', cx + span * 0.08, cy + 7 * sc);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
-    addPharmHot(x, y, x + 1.3, y + 0.55, z, 12);
+  }
+  // One pharmacy gondola against the back wall: four brand bays, four shelves each.
+  function drawPharmShelf(p) {
+    const x = p.gx, y = p.gy, z = p.z || 0, gw = p.gw || 6, d = 0.5, H = 15.5, zm = view.zoom;
+    const W = '#fffdf8', L = '#f1ebe0', R = '#e2dacb';
+    box(x, y, gw, 0.06, H, W, L, R, null, z);
+    box(x, y, 0.08, d, H, W, L, R, null, z);
+    box(x + gw - 0.08, y, 0.08, d, H, W, L, R, null, z);
+    const bays = [
+      { name: 'Mounjaro', cols: ['#eef2f7', '#e4e9f0'], band: '#4b5563' },
+      { name: 'Wegovy', cols: ['#e8f0fb', '#dde8f8'], band: '#1d4ed8' },
+      { name: 'LHA La Peel', cols: ['#eefaf3', '#e2f4ea'], band: '#059669' },
+      { name: 'Skincare', cols: ['#fdecef', '#fff7ed', '#e0f2fe', '#fef9c3'], band: '#c4a265' }
+    ];
+    const inner = gw - 0.16, cw = inner / bays.length;
+    const shelves = [0.6, 4.0, 7.8, 11.6];
+    const n = zm < 0.8 ? 3 : 5;
+    shelves.forEach((sz) => box(x + 0.08, y + 0.04, inner, d - 0.04, 0.32, '#f6f0e4', '#e8dfc9', '#d8ccb0', null, z + sz));
+    bays.forEach((b, bi) => {
+      const bx0 = x + 0.08 + bi * cw;
+      if (bi > 0) box(bx0 - 0.02, y + 0.04, 0.04, d - 0.04, H - 0.2, '#f1ebe0', '#e6dece', '#d5cbb6', null, z);
+      shelves.forEach((sz, si) => {
+        const step = (cw - 0.2) / n, h = 2.0 + (si % 2) * 0.4;
+        for (let i = 0; i < n; i++) {
+          const bx = bx0 + 0.12 + i * step, c = b.cols[(i + si) % b.cols.length];
+          box(bx, y + 0.12, 0.2, 0.26, h, c, shade(c, -10), shade(c, -22), null, z + sz + 0.32);
+          if (zm >= 0.9) box(bx, y + 0.37, 0.2, 0.02, h * 0.24, b.band, shade(b.band, -10), shade(b.band, -20), null, z + sz + 0.32 + h * 0.4);
+        }
+      });
+    });
+    box(x, y, gw, d, 1.1, '#f6e7ec', '#efd6de', '#e4c3cf', null, z + H);
+    if (zm >= 1.05) {
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#3f4a3c';
+      ctx.font = '700 ' + Math.max(6, 6.8 * Math.min(zm, 1.6)) + 'px sans-serif';
+      bays.forEach((b, bi) => {
+        const o = iso(x + 0.08 + bi * cw + cw / 2, y + d + 0.02, z + H + 0.3);
+        ctx.fillText(b.name, o.x, o.y);
+      });
+      ctx.textAlign = 'left';
+    }
+    addPharmHot(x, y, x + gw, y + d, z, H + 2);
+  }
+  // Glass-door pharmacy fridge for cold-chain pens (2-8 C).
+  function drawPharmFridge(p, t) {
+    const x = p.gx, y = p.gy, z = p.z || 0, zm = view.zoom;
+    box(x, y, 1.25, 0.62, 14.5, '#f7f9fb', '#e4eaf0', '#c9d3dc', null, z);
+    const cols = ['#e8f0fb', '#eef2f7'];
+    [2.2, 5.6, 9.0].forEach((sz, r) => {
+      box(x + 0.1, y + 0.4, 1.05, 0.03, 0.25, '#cbd5e1', '#b6c2cf', '#94a3b8', null, z + sz);
+      for (let i = 0; i < 4; i++) {
+        const c = cols[(i + r) % 2];
+        box(x + 0.16 + i * 0.25, y + 0.42, 0.18, 0.12, 1.8, c, shade(c, -10), shade(c, -22), null, z + sz + 0.25);
+      }
+    });
+    ctx.save(); ctx.globalAlpha *= 0.42;
+    box(x + 0.06, y + 0.58, 1.13, 0.04, 11.6, 'rgba(255,255,255,.9)', 'rgba(142,197,255,.55)', 'rgba(255,255,255,.7)', null, z + 1.2);
+    ctx.restore();
+    box(x + 0.98, y + 0.6, 0.05, 0.03, 4, '#94a3b8', '#7b8aa0', '#64748b', null, z + 5);
+    box(x + 0.12, y + 0.58, 0.6, 0.04, 1.3, '#dfe7ef', '#cbd5e1', '#b6c2cf', null, z + 12.7);
+    if (zm >= 1.1) {
+      const o = iso(x + 0.18, y + 0.63, z + 13.0);
+      ctx.fillStyle = (Math.floor(t) % 4 === 0) ? '#3f7d68' : '#2c3a32';
+      ctx.font = '700 ' + Math.max(6, 6 * Math.min(zm, 1.5)) + 'px sans-serif';
+      ctx.fillText('2-8 C', o.x, o.y);
+    }
+    addPharmHot(x, y, x + 1.25, y + 0.62, z, 16);
+  }
+  // Dispensing counter with acrylic screen; the POS, card reader, and bag are separate props.
+  function drawPharmCounter(p) {
+    const x = p.gx, y = p.gy, z = p.z || 0, gw = p.gw || 4.4, d = 0.65;
+    box(x, y, gw, d, 6.4, '#f6efe0', '#e8dfc9', '#d8ccb0', null, z);
+    box(x + 0.15, y + d - 0.06, gw - 0.3, 0.06, 0.6, '#3f7d68', '#356b58', '#2c5848', null, z + 3.4);
+    box(x - 0.04, y - 0.04, gw + 0.08, d + 0.08, 0.5, '#ffffff', '#f3eee6', '#e4ddd0', null, z + 6.4);
+    ctx.save(); ctx.globalAlpha *= 0.4;
+    box(x + 0.5, y + 0.22, 1.9, 0.03, 7.5, 'rgba(255,255,255,.85)', 'rgba(142,197,255,.5)', 'rgba(255,255,255,.7)', null, z + 6.9);
+    ctx.restore();
+    if (view.zoom >= 0.9) {
+      const o = iso(x + gw * 0.5, y + d, z + 2.2);
+      const sc = Math.min(view.zoom, 1.3);
+      ctx.font = '700 ' + Math.max(7, 8 * sc) + 'px sans-serif';
+      const label = 'Tap to shop', w = ctx.measureText(label).width + 12;
+      ctx.fillStyle = 'rgba(255,253,248,.96)'; ctx.strokeStyle = '#d9d2c2'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.roundRect(o.x - w / 2, o.y - 7 * sc, w, 13 * sc, 6); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#3f7d68'; ctx.fillText(label, o.x - w / 2 + 6, o.y + 3 * sc);
+    }
+    addPharmHot(x, y, x + gw, y + d, z, 10);
   }
   function drawMenuKiosk(p) {
     const x = p.gx, y = p.gy, z = p.z || 0;
@@ -2234,7 +2854,7 @@ Add a prop
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
   function fitCampus() {
-    const corners = [[1, 1, 0], [36, 1, 0], [1, 29, 0], [36, 29, 0], [1.6, 0.45, 120], [23.2, 6.6, 130]];
+    const corners = [[1, 1, 0], [36, 1, 0], [1, 29, 0], [36, 29, 0], [45.5, 10, 0], [45.5, 28.5, 0], [1.6, 0.45, 120], [23.2, 6.6, 130]];
     let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
     corners.forEach(([gx, gy, gz]) => {
       const x = (gx - gy) * TW;
@@ -2285,7 +2905,7 @@ Add a prop
     let best = null, bd = Math.max(28, 18 * view.zoom + 18);
     actors.forEach((s) => {
       if (s.dead) return;
-      const p = iso(s.gx, s.gy, s.z);
+      const p = iso(s.gx, s.gy, visZ(s));
       const d = Math.hypot(p.x - sx, p.y - 18 * view.zoom - sy);
       if (d < bd) { bd = d; best = s; }
     });
@@ -2304,9 +2924,15 @@ Add a prop
     ax.clearRect(0, 0, 144, 144);
     ax.fillStyle = '#f8fafc'; ax.fillRect(0, 0, 144, 144);
     const avSim = { x: 72, y: 92 };
-    drawActorBody(s, avSim, 92, 1.15, ax);
-    drawActorHead(s, avSim, 92, 1.15, ax);
-    const tabs = ['Layman', 'Technical', 'Run', 'Log'];
+    if (s.pet) {
+      ax.fillStyle = '#e4f1dc'; ax.fillRect(0, 100, 144, 44);
+      drawDogSprite({ ...s, face: 1, state: 'PLAYING' }, { x: 66, y: 100 }, 100, 2.1, simT, ax);
+    } else {
+      drawActorBody(s, avSim, 92, 1.15, ax);
+      drawActorHead(s, avSim, 92, 1.15, ax);
+    }
+    const tabs = (s.pet || s.kid) ? ['Layman', 'Log'] : ['Layman', 'Technical', 'Run', 'Log'];
+    if (!tabs.includes(s.tab)) s.tab = 'Layman';
     document.getElementById('tabs').innerHTML = tabs.map((t) => '<button type="button" data-tab="' + t + '"' + (s.tab === t ? ' class="on"' : '') + '>' + t + '</button>').join('');
     const panel = document.getElementById('panel');
     if (s.tab === 'Technical') panel.innerHTML = '<ul>' + s.tech.map((x) => '<li>' + x + '</li>').join('') + '</ul>';
@@ -2396,7 +3022,8 @@ Add a prop
       printTerm('rooms: ' + Object.keys(FOCI).join(', '));
       return;
     }
-    if (line === 'list') { printTerm(actors.filter((a) => !a.guest).map((a) => a.handle + ' · ' + a.state).join('\n')); return; }
+    if (line === 'list') { printTerm(actors.filter((a) => !a.guest && !a.pet && !a.kid).map((a) => a.handle + ' · ' + a.state).join('\n')); return; }
+    if (line === 'dogs') { printTerm(actors.filter((a) => a.pet).map((a) => a.name + ' · ' + a.state + ' · (' + a.gx.toFixed(1) + ', ' + a.gy.toFixed(1) + ')').join('\n')); return; }
     if (line === 'pause') { paused = true; printTerm('paused'); syncSpeed(); return; }
     if (line === 'resume') { paused = false; speed = speed || 1; printTerm('resumed'); syncSpeed(); return; }
     if (line === 'show2f') { showFull = !showFull; printTerm(showFull ? '2F shown' : '2F cut away'); syncSpeed(); return; }
@@ -2482,9 +3109,11 @@ Add a prop
     'L-105': 'Waiting lounge with a big TV, comfortable seating, tea, and snacks while you wait. Ivy also covers aftercare here.',
     'W-112': 'A beauty restroom with two private cubicles, an accessible toilet and grab rail, double vanity, illuminated mirrors, touch-free soap and warm blush detailing.',
     'D-108': 'Changing rooms and lockers with fresh linen before every bay.',
-    'B-402': 'Boardroom for case reviews and brand checks. No filters on real results.',
-    'N-401': 'Operations wall watches every room and keeps waits under 12 minutes.',
-    'PH-402': '2F aesthetic pharmacy: a lit showcase for Mounjaro, Wegovy, and LHA La Peel, counselling counter, SYLFIRM X Ultimate Edition demo unit, and Elisa for retail plus device booking.'
+    'T-401': 'Second-floor aesthetic treatment suite: two hospital-grade bays with SYLFIRM X Ultimate RF microneedling, pico laser, skin cooling, HIFU, LED therapy, hand-wash station, sharps and clinical waste, oxygen, and an emergency cart.',
+    'K-106': 'Family playroom next to the lounge: soft-play mat, ball pit, mini slide, play tent, toy shelf, and a reading corner. Rina hosts the kids while parents are in consultation or treatment.',
+    park: 'Outdoor dog run outside the clinic: fenced lawn, shade trees, kennel, water bowls, and an agility bar. Joy and her pups Exa, Xela, and Pico live here and never come inside.',
+    'N-401': 'Operations, billing, and brand desks: patient flow, room readiness, invoices, and content approvals, all within a few steps of the pharmacy.',
+    'PH-402': 'Clinic pharmacy: one brand shelf (Mounjaro, Wegovy, LHA La Peel, medical skincare), a 2-8 C cold-chain fridge, locked cabinet, dispensing counter with pharmacist counselling, and a weight-management consult corner with scale and BP monitor.'
   };
   function openRoomCard(room, sx, sy) {
     const drawer = document.getElementById('drawer');
@@ -2492,7 +3121,7 @@ Add a prop
     selected = null; followH = null;
     document.getElementById('d-name').textContent = room.name;
     document.getElementById('d-role').textContent = room.id + ' · tap a person inside for their card';
-    document.getElementById('d-state').textContent = 'Room · ' + (room.z ? '2F' : '1F');
+    document.getElementById('d-state').textContent = room.id === 'park' ? 'Outdoor · dogs only' : 'Room · ' + (room.z ? '2F' : '1F');
     const av = document.getElementById('avatar');
     const ax = av.getContext('2d');
     ax.clearRect(0, 0, 144, 144);
@@ -2503,23 +3132,25 @@ Add a prop
     ax.fillStyle = '#3f4a3c'; ax.font = '700 13px sans-serif'; ax.textAlign = 'center';
     ax.fillText(room.id, 72, 72);
     ax.font = '11px sans-serif'; ax.fillStyle = '#6d7468';
-    ax.fillText(room.z ? 'Level 2' : 'Level 1', 72, 88);
+    ax.fillText(room.id === 'park' ? 'Outdoors' : room.z ? 'Level 2' : 'Level 1', 72, 88);
     ax.textAlign = 'left';
     document.getElementById('tabs').innerHTML = '';
     const url = 'https://wa.me/6281261884912?text=' + encodeURIComponent('Hello SKINDERMA, I would like to book ' + room.name + ' (' + room.id + ').');
-    let actions = '<div class="rowbtns"><button type="button" id="room-focus">Zoom here</button><button class="primary" type="button" id="room-book">Book this room</button>';
+    let actions = '<div class="rowbtns"><button type="button" id="room-focus">Zoom here</button>';
+    if (room.id !== 'park') actions += '<button class="primary" type="button" id="room-book">Book this room</button>';
     if (room.id === 'PH-402') actions += '<button type="button" id="room-pharm">Open pharmacy shop</button>';
     actions += '<a href="/" style="align-self:center;font-size:12px;color:#3f7d68;font-weight:700">Patient app</a></div>';
     document.getElementById('panel').innerHTML = '<p>' + (ROOM_BLURB[room.id] || 'A SKINDERMA care space.') + '</p>' + actions;
     document.getElementById('room-focus').onclick = () => focusKey(FOCI[room.id] ? room.id : (room.z ? 'f2' : 'full'));
-    document.getElementById('room-book').onclick = () => { toast('Opening WhatsApp to book ' + room.id + '.'); window.open(url, '_blank', 'noopener'); };
+    const bookBtn = document.getElementById('room-book');
+    if (bookBtn) bookBtn.onclick = () => { toast('Opening WhatsApp to book ' + room.id + '.'); window.open(url, '_blank', 'noopener'); };
     const pharmBtn = document.getElementById('room-pharm');
     if (pharmBtn) pharmBtn.onclick = () => openPharmShop();
   }
   function triggerPink() {
     pinkUntil = simT + 12;
     actors.forEach((s) => {
-      if (s.guest || s.dead) return;
+      if (s.guest || s.dead || s.pet || s.kid) return;
       s.rush = true; s.busy = false;
       s.say = 'Code Pink — to consultations'; s.sayUntil = simT + 3.5;
       log(s, 'Code Pink');
@@ -2540,10 +3171,10 @@ Add a prop
   function buildTools() {
     const tools = document.getElementById('tools');
     const buttons = [
-      ['full','Full Clinic'], ['yeyen','dr. Yeyen'], ['hengki','dr. Hengki'], ['f2','2F Boardroom & Ops'], ['R-101','1F Reception'],
+      ['full','Full Clinic'], ['yeyen','dr. Yeyen'], ['hengki','dr. Hengki'], ['f2','2F Overview'], ['T-401','2F Treatment Suite'], ['R-101','1F Reception'],
       ['consult','1F Consultations'], ['treat','1F Treatment Suites'], ['L-105','1F Waiting Lounge'],
       ['P-110','1F Mini Kitchen'], ['M-130','1F Meeting Room'], ['S-120','1F Sterilisation'], ['W-112','1F Restroom'], ['D-108','1F Lockers'],
-      ['PH-402','2F Aesthetic Pharmacy']
+      ['PH-402','2F Aesthetic Pharmacy'], ['K-106','1F Family Playroom'], ['park','Dog Park']
     ];
     tools.innerHTML = buttons.map(([k, label]) => '<button type="button" data-focus="' + k + '">' + label + '</button>').join('')
       + '<button type="button" id="tour">Tour</button>'
@@ -2586,6 +3217,8 @@ Add a prop
   furnish();
   STAFF.forEach((s) => { const a = makeActor(s); a.tab = 'Layman'; actors.push(a); });
   VVIP.forEach((person, index) => { const a = makeVVIPPatient(person, index); a.tab = 'Layman'; actors.push(a); });
+  KIDS.forEach((k, i) => { const a = makeKid(k, i); a.tab = 'Layman'; actors.push(a); });
+  DOGS.forEach((d) => { const a = makeDog(d); a.tab = 'Layman'; actors.push(a); });
   buildTools();
   bootLogo();
   resize();
@@ -2749,7 +3382,7 @@ Add a prop
     if (followH && !followH.dead) {
       const z = view.zoom;
       view.tx = W / 2 - (followH.gx - followH.gy) * TW * z;
-      view.ty = H * 0.42 - ((followH.gx + followH.gy) * TH * z - (followH.z || 0) * z);
+      view.ty = H * 0.42 - ((followH.gx + followH.gy) * TH * z - visZ(followH) * z);
       view.glide = true;
     }
     if (tourTimer > 0 && !paused) {
@@ -2786,7 +3419,7 @@ Add a prop
       tickAt = now + 1000;
       const d = new Date();
       document.getElementById('clockline').textContent = 'SKINDERMA · 2 floors · ' + d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-      const text = actors.filter((a) => !a.guest && !a.dead).map((a) => a.handle + ' · ' + roomAt(a.gx, a.gy, a.z).short).join('    ');
+      const text = actors.filter((a) => !a.guest && !a.dead && !a.pet && !a.kid).map((a) => a.handle + ' · ' + roomAt(a.gx, a.gy, a.z).short).join('    ');
       document.getElementById('tick').textContent = text + '    ' + text;
       if (selected) document.getElementById('d-state').textContent = selected.state + ' · ' + roomAt(selected.gx, selected.gy, selected.z).short;
     }
