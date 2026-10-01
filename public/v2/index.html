@@ -565,10 +565,11 @@ Add a prop
   }
   function logoMark(x, y, r) {
     ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
-    ctx.strokeStyle = COL.rose; ctx.lineWidth = Math.max(1, r * 0.18);
-    ctx.beginPath(); ctx.arc(x, y + r * 0.15, r * 0.48, Math.PI * 1.05, Math.PI * 1.95); ctx.stroke();
-    ctx.beginPath(); ctx.arc(x, y - r * 0.05, r * 0.42, Math.PI * 0.1, Math.PI * 0.9); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(x, y - r * 0.35); ctx.lineTo(x, y + r * 0.4); ctx.stroke();
+    ctx.fillStyle = '#3f7d68';
+    ctx.font = '700 ' + Math.max(6, r * 1.35) + 'px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('S', x, y + r * 0.06);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   }
 
   function furnish() {
@@ -655,8 +656,11 @@ Add a prop
 
     addBox(3.2, 3.2, 6.4, 1.15, 6, '#ffffff', 92);
     for (let i = 0; i < 5; i++) chair(3.6 + i, 4.5, 92, i % 2 ? COL.sky : '#fff', false);
-    wallTV(6.2, 1.3, 108);
+    add({ type:'screenbank', gx: 4.6, gy: 1.25, z: 104, n: 1 });
     planter(2.6, 6.4, 92); planter(10.2, 6.4, 92);
+    addBox(2.4, 5.5, 1.3, 0.55, 6, '#ffffff', 92, '#e2e8f0', '#cbd5e1');
+    addBox(8.8, 5.6, 1.5, 0.55, 5, '#f8fafc', 92, '#e2e8f0', COL.sky);
+    addBox(2.5, 2.4, 0.7, 1.6, 8, '#ffffff', 92, '#e7e1d6', '#d5cec1');
     workstation(3.4, 5.2, 92, COL.gold, false);
     seats['@finance_ada'] = { x: 4.1, y: 6.5, z: 92 };
     seats['@brand_leo'] = { x: 6.8, y: 4.7, z: 92 };
@@ -664,7 +668,9 @@ Add a prop
     add({ type:'laptop', gx: 6.5, gy: 3.55, z: 98.2 });
     add({ type:'laptop', gx: 7.6, gy: 3.55, z: 98.2 });
 
-    add({ type:'videowall', gx: 13.2, gy: 1.25, z: 108 });
+    add({ type:'screenbank', gx: 13.4, gy: 1.22, z: 104, n: 3 });
+    addBox(13.3, 5.9, 6.4, 0.45, 4, '#ffffff', 92, '#e2e8f0', '#cbd5e1');
+    addBox(20.2, 2.2, 0.7, 2.4, 10, '#f8fafc', 92, '#e2e8f0', COL.sky);
     for (let i = 0; i < 3; i++) {
       const accent = [COL.sage, COL.gold, COL.sky][i];
       workstation(13.2 + i * 1.85, 2.5, 92, accent, false);
@@ -737,8 +743,6 @@ Add a prop
     hospitalDress();
   }
   function hospitalDress() {
-    add({ type:'art', gx: 13.0, gy: 10.42, z: 20, c1: '#dcefe6', c2: '#F4A7B9' });
-    add({ type:'art', gx: 18.6, gy: 10.42, z: 20, c1: '#e0f2fe', c2: '#F2C14E' });
     add({ type:'art', gx: 25.4, gy: 2.32, z: 16, c1: '#e7f6ef', c2: '#8EC5FF' });
     add({ type:'art', gx: 31.4, gy: 2.32, z: 16, c1: '#fdecef', c2: '#7ED3B2' });
     add({ type:'art', gx: 29.6, gy: 11.32, z: 16, c1: '#dcefe6', c2: '#B8A1F2' });
@@ -774,22 +778,26 @@ Add a prop
 
   function kitchenAndMeeting() {
     const wood = '#f6efe0', woodL = '#e8dfc9', woodR = '#d8ccb0';
-    // Mini kitchen and refreshments
-    addBox(3.4, 10.3, 4.5, 0.75, 6, wood, 0, woodL, woodR);
-    addBox(3.35, 10.25, 4.6, 0.85, 0.7, '#ffffff', 6, '#e9e4d8', '#d6cfbf');
-    device('coffee', 3.7, 10.5, 6.7, 'Coffee');
-    device('fruit', 4.9, 10.5, 6.7);
-    device('snacks', 5.9, 10.55, 6.7);
-    device('microwave', 6.75, 10.42, 6.7, 'Microwave');
-    addBox(5.6, 10.2, 2.4, 0.36, 4, wood, 13, woodL, woodR);
-    device('fridge', 8.2, 10.25, 0, 'Fridge');
+    // Mini kitchen: base cabinets, stone top, backsplash and wall cabinets.
+    addBox(3.35, 10.28, 4.7, 0.82, 1.3, '#cfc6b4', 0, '#b7ad9a', '#a39682');
+    addBox(3.4, 10.3, 4.5, 0.75, 7.2, wood, 1.2, woodL, woodR);
+    addBox(3.45, 10.22, 4.4, 0.12, 6.4, '#f4efe6', 2.2, '#e7dfd2', '#d9d0c0');
+    addBox(3.32, 10.18, 4.75, 0.95, 0.7, '#f7f4ee', 8.4, '#ece6da', '#ddd4c4');
+    addBox(3.4, 10.12, 4.5, 0.42, 5.2, wood, 16.2, woodL, woodR);
+    addBox(6.45, 10.08, 1.25, 0.5, 2.4, '#e8eef2', 14.2, '#d5dee6', '#c3ced8');
+    device('coffee', 3.55, 10.42, 9.1, 'Coffee');
+    device('fruit', 4.75, 10.48, 9.1);
+    device('snacks', 5.55, 10.5, 9.1);
+    device('microwave', 6.7, 10.38, 9.1, 'Microwave');
+    device('fridge', 8.15, 10.2, 0, 'Fridge');
     addBox(2.45, 11.7, 0.45, 0.45, 10, '#f8fafc', 0, '#e2e8f0', COL.sky);
     addBox(2.5, 11.75, 0.35, 0.35, 3.5, '#bfe3ff', 10, '#a6d4f7', '#8cc4ee');
-    addBox(4.2, 12.3, 3.4, 1.1, 6, wood, 0, woodL, woodR);
-    addBox(4.1, 12.2, 3.6, 1.3, 0.7, '#ffffff', 6, '#e9e4d8', '#d6cfbf');
-    device('fruit', 4.6, 12.4, 6.7);
-    device('snacks', 5.7, 12.55, 6.7);
-    addBox(6.6, 12.55, 0.4, 0.3, 0.9, '#ffffff', 6.7);
+    addBox(4.15, 12.28, 3.5, 1.15, 1.2, '#cfc6b4', 0, '#b7ad9a', '#a39682');
+    addBox(4.2, 12.3, 3.4, 1.1, 6.4, wood, 1.1, woodL, woodR);
+    addBox(4.1, 12.2, 3.6, 1.3, 0.55, '#f7f4ee', 7.5, '#ece6da', '#ddd4c4');
+    device('fruit', 4.55, 12.45, 8.05);
+    device('snacks', 5.65, 12.55, 8.05);
+    addBox(6.55, 12.55, 0.42, 0.32, 0.8, '#ffffff', 8.05);
     [4.4, 5.5, 6.6].forEach((sx, i) => chair(sx, 13.75, 0, [COL.sage, COL.blush, COL.sky][i], false));
     device('vend', 8.7, 12.6, 0);
     addBox(2.4, 13.0, 0.5, 1.4, 5, wood, 0, woodL, woodR);
@@ -814,6 +822,7 @@ Add a prop
   function waitingLounge() {
     const wood = '#f6efe0', woodL = '#e8dfc9', woodR = '#d8ccb0';
     bigTV(31.6, 11.05, 8, 3.1, 'SKINDERMA TV');
+    add({ type:'brands', gx: 28.35, gy: 11.55, z: 18 });
     addBox(31.3, 11.2, 3.4, 0.55, 5, wood, 0, woodL, woodR);
     addBox(32.4, 11.35, 1.4, 0.18, 0.9, '#1e293b', 5);
     sofa(29.0, 15.4, 2.6, '#e3ede7', '#cfdcd3', 0, false);
@@ -1236,12 +1245,22 @@ Add a prop
       return;
     }
     if (p.type === 'clock') {
-      const o = iso(p.gx, p.gy, p.z);
-      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(o.x, o.y, 12 * view.zoom, 0, 7); ctx.fill();
-      ctx.strokeStyle = COL.sage; ctx.stroke();
-      const d = new Date();
-      const ang = ((d.getHours() % 12) / 12) * Math.PI * 2 - Math.PI / 2;
-      ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(o.x + Math.cos(ang) * 6 * view.zoom, o.y + Math.sin(ang) * 6 * view.zoom); ctx.stroke();
+      const o = iso(p.gx, p.gy, p.z), r = 11 * view.zoom, d = new Date();
+      ctx.fillStyle = '#fffdf8'; ctx.strokeStyle = '#3f7d68'; ctx.lineWidth = Math.max(1, view.zoom);
+      ctx.beginPath(); ctx.arc(o.x, o.y, r, 0, 7); ctx.fill(); ctx.stroke();
+      for (let i = 0; i < 12; i++) {
+        const a = i / 12 * Math.PI * 2 - Math.PI / 2;
+        ctx.beginPath();
+        ctx.moveTo(o.x + Math.cos(a) * r * 0.72, o.y + Math.sin(a) * r * 0.72);
+        ctx.lineTo(o.x + Math.cos(a) * r * 0.9, o.y + Math.sin(a) * r * 0.9);
+        ctx.stroke();
+      }
+      const hour = ((d.getHours() % 12) + d.getMinutes() / 60) / 12 * Math.PI * 2 - Math.PI / 2;
+      const minute = d.getMinutes() / 60 * Math.PI * 2 - Math.PI / 2;
+      ctx.lineWidth = Math.max(1.4, 1.6 * view.zoom);
+      ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(o.x + Math.cos(hour) * r * 0.48, o.y + Math.sin(hour) * r * 0.48); ctx.stroke();
+      ctx.lineWidth = Math.max(1, view.zoom);
+      ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(o.x + Math.cos(minute) * r * 0.72, o.y + Math.sin(minute) * r * 0.72); ctx.stroke();
       return;
     }
     if (p.type === 'logo') { const o = iso(p.gx, p.gy, p.z); logoMark(o.x, o.y, 12 * view.zoom); return; }
@@ -1272,9 +1291,31 @@ Add a prop
       deviceChip({ label: p.label, gx: x, gy: y, z: p.z }, 17);
       return;
     }
-    if (p.type === 'videowall') {
-      const caption = simT < pinkUntil ? 'Code Pink' : 'On schedule';
-      drawWallScreen(p.gx, p.gy, p.z, 2.4, caption, true);
+    if (p.type === 'screenbank') {
+      for (let i = 0; i < (p.n || 1); i++) {
+        box(p.gx + i * 1.35, p.gy, 1.15, 0.08, 7, '#243044', '#1e293b', '#334155', null, p.z);
+        const o = iso(p.gx + i * 1.35 + 0.12, p.gy + 0.02, p.z + 5.6);
+        const w = 22 * view.zoom, h = 13 * view.zoom;
+        ctx.fillStyle = i === 1 && simT < pinkUntil ? '#fdecef' : '#e7f6ef';
+        ctx.fillRect(o.x, o.y - h, w, h);
+        ctx.strokeStyle = 'rgba(63,125,104,.45)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(o.x + 3, o.y - 3); ctx.lineTo(o.x + w * 0.45, o.y - h * 0.62); ctx.lineTo(o.x + w - 3, o.y - 4); ctx.stroke();
+      }
+      return;
+    }
+    if (p.type === 'brands') {
+      const names = ['Allergan', 'Ultherapy', 'Profhilo', 'Rejuran', 'Lutronic', 'Candela', 'Asclepion', 'Teosyal', 'Dermapen', 'PDRN', 'Thermage', 'Radiesse'];
+      names.forEach((name, i) => {
+        const col = i % 6, row = Math.floor(i / 6);
+        const gx = p.gx + col * 0.72, z = p.z - row * 4.2;
+        box(gx, p.gy, 0.64, 0.06, 3.1, '#fffdf8', '#e6dece', '#d5cbb6', null, z);
+        box(gx + 0.04, p.gy, 0.08, 0.05, 1.5, '#3f7d68', '#356b58', '#2c5848', null, z + 0.8);
+        if (view.zoom < 1.35) return;
+        const o = iso(gx + 0.16, p.gy + 0.02, z + 1.7);
+        ctx.font = '700 8px sans-serif';
+        ctx.fillStyle = '#3f4a3c';
+        ctx.fillText(name, o.x, o.y);
+      });
       return;
     }
     if (p.type === 'thermo' || p.type === 'bars' || p.type === 'board' || p.type === 'mirror' || p.type === 'camera') {
@@ -1288,11 +1329,10 @@ Add a prop
       return;
     }
     if (p.type === 'art') {
-      const o = iso(p.gx, p.gy, p.z);
-      ctx.fillStyle = '#fff'; round(o.x, o.y, 26 * view.zoom, 18 * view.zoom, 2);
-      ctx.fillStyle = p.c1; ctx.fillRect(o.x + 3, o.y + 3, 9 * view.zoom, 12 * view.zoom);
-      ctx.fillStyle = p.c2; ctx.fillRect(o.x + 13 * view.zoom, o.y + 3, 10 * view.zoom, 6 * view.zoom);
-      ctx.fillStyle = '#dcefe6'; ctx.fillRect(o.x + 13 * view.zoom, o.y + 10 * view.zoom, 10 * view.zoom, 5 * view.zoom);
+      const o = iso(p.gx, p.gy, p.z), w = 22 * view.zoom, h = 16 * view.zoom;
+      ctx.fillStyle = '#f6efe0'; ctx.fillRect(o.x - 2, o.y - 2, w + 4, h + 4);
+      ctx.fillStyle = p.c1; ctx.fillRect(o.x, o.y, w, h * 0.62);
+      ctx.fillStyle = p.c2; ctx.fillRect(o.x, o.y + h * 0.62, w, h * 0.38);
       return;
     }
     if (p.type === 'curtain') {
@@ -1303,17 +1343,26 @@ Add a prop
     }
     if (p.type === 'lift') {
       const x = p.gx, y = p.gy, z = p.z || 0;
-      box(x, y, 2.45, 2.3, 92, '#f8fafc', '#e9eef2', '#d7e0e8', '#b8c4ce', z);
-      [2, 72].forEach((level) => {
-        box(x + 0.24, y + 2.22, 0.92, 0.08, 18, '#dbe5ec', '#c7d3dd', '#aebdca', null, z + level);
-        box(x + 1.18, y + 2.22, 0.92, 0.08, 18, '#dbe5ec', '#c7d3dd', '#aebdca', null, z + level);
-        box(x + 1.15, y + 2.19, 0.04, 0.04, 18, '#94a3b8', '#7b8aa0', '#64748b', null, z + level);
-        box(x + 2.15, y + 2.0, 0.16, 0.12, 3.5, '#334155', '#1e293b', '#0f172a', null, z + level + 7);
-        const light = iso(x + 2.25, y + 2.08, z + level + 9.5);
-        ctx.fillStyle = level === 72 ? COL.gold : COL.sage;
-        ctx.beginPath(); ctx.arc(light.x, light.y, 1.8 * view.zoom, 0, 7); ctx.fill();
+      [[0, 0], [2.15, 0], [0, 2.05], [2.15, 2.05]].forEach(([dx, dy]) => {
+        box(x + dx, y + dy, 0.16, 0.16, 94, '#d5dde4', '#b7c3ce', '#8fa0ae', null, z);
       });
-      box(x - 0.08, y - 0.08, 2.61, 2.46, 1.2, '#ffffff', '#e2e8f0', '#cbd5e1', null, z + 92);
+      ctx.save(); ctx.globalAlpha *= 0.22;
+      box(x + 0.16, y + 0.16, 1.99, 1.89, 90, 'rgba(226,242,250,.9)', 'rgba(186,214,230,.55)', 'rgba(226,242,250,.75)', null, z + 2);
+      ctx.restore();
+      [4, 70].forEach((level, floor) => {
+        box(x + 0.28, y + 1.92, 0.82, 0.1, 16, '#f8fafc', '#e2e8f0', '#cbd5e1', null, z + level);
+        box(x + 1.16, y + 1.92, 0.82, 0.1, 16, '#f8fafc', '#e2e8f0', '#cbd5e1', null, z + level);
+        box(x + 1.08, y + 1.9, 0.06, 0.08, 16, '#94a3b8', '#64748b', '#475569', null, z + level);
+        box(x + 2.28, y + 1.55, 0.18, 0.22, 4.2, '#1e293b', '#0f172a', '#334155', null, z + level + 6);
+        const panel = iso(x + 2.36, y + 1.66, z + level + 8.4);
+        ctx.fillStyle = floor ? '#F2C14E' : '#5FB382';
+        ctx.font = '700 ' + Math.max(8, 9 * view.zoom) + 'px sans-serif';
+        ctx.fillText(floor ? '2' : '1', panel.x, panel.y);
+        const up = iso(x + 2.32, y + 1.62, z + level + 6.6);
+        ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(up.x, up.y + 3); ctx.lineTo(up.x + 3, up.y); ctx.lineTo(up.x + 6, up.y + 3); ctx.stroke();
+      });
+      box(x + 0.35, y + 0.4, 1.55, 1.35, 14, '#f8fafc', '#e7edf2', '#d3dce4', null, z + 6);
       return;
     }
   }
@@ -1476,7 +1525,8 @@ Add a prop
   }
   function drawBigTV(p, t) {
     const x = p.gx, y = p.gy + 0.1, z = p.z, tl = p.tiles, zm = view.zoom;
-    box(p.gx, p.gy, tl, 0.12, 15, '#1e293b', '#111827', '#334155', null, z);
+    box(p.gx, p.gy, tl, 0.22, 16, '#243044', '#1e293b', '#111827', null, z);
+    box(p.gx + 0.15, p.gy + 0.16, tl - 0.3, 0.08, 1.2, '#111827', '#0f172a', '#1e293b', null, z - 1.2);
     const a = iso(x + 0.1, y, z + 14), b = iso(x + tl - 0.1, y, z + 14), c = iso(x + tl - 0.1, y, z + 1.6), d = iso(x + 0.1, y, z + 1.6);
     ctx.save();
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y); ctx.closePath(); ctx.clip();
