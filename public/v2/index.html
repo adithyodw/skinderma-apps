@@ -345,6 +345,10 @@ Add a prop
       lay:'dr. Intan plans bio-stimulators and PDRN, and sits beside dr. Yeyen when a case needs a second read.',
       tech:['Inputs: skin quality score','Systems: side station in C-201','SLA: dual sign-off on stimulators','Output: staged plan'],
       quotes:['Barrier first, then stimulus.','PDRN is on the board.','I agree with the staging.'] },
+    { handle:'@dr_hengki', name:'dr. Hengki', role:'Aesthetic physician', group:'Medical', roleKey:'physician', home:[33.1,7.2,0], room:'C-202', uniform:'#ffffff', hair:'#1f2937', skin:'#d9a27a', acc:'glasses',
+      lay:'dr. Hengki reviews laser and facial-device treatment plans and checks every setting before the patient enters a treatment bay.',
+      tech:['Inputs: skin analysis, medical history, device protocol','Systems: C-202 analyser and treatment devices','SLA: physician sign-off before treatment','Output: safe device parameters'],
+      quotes:['Let us confirm the settings.','Safety check complete.','Your skin plan is ready.'] },
     { handle:'@nurse_hana', name:'Hana Lim', role:'Treatment nurse', group:'Medical', roleKey:'nurse', home:[26.3,21.4,0], room:'T-301', uniform:COL.mint, hair:'#111827', skin:'#f3c7a8', acc:'cap',
       lay:'Hana runs bay T-301: she preps the bed, checks consent, and stays with the patient through cooling.',
       tech:['Inputs: consented plan, bay id','Systems: bed, trolley, lamp','SLA: bay ready in 5 minutes','Output: session chart'],
@@ -385,6 +389,10 @@ Add a prop
       lay:'Wei watches consumables and pings the sterile room before a bay can run dry.',
       tech:['Inputs: par alerts','Systems: station 3','SLA: pick-face before next session','Output: supply task'],
       quotes:['Tips are low in T-302.','I pinged sterile.','Hot desk is open.'] },
+    { handle:'@manager_suwandi', name:'Suwandi', role:'Clinic Manager', group:'Operations', roleKey:'ops', home:[20.6,5.7,92], room:'N-401', uniform:'#ffffff', hair:'#111827', skin:'#d9a27a', acc:'glasses',
+      lay:'Suwandi manages the clinic floor, patient experience, staffing, and daily hospital-grade operating standards.',
+      tech:['Inputs: room status, staffing, patient flow','Systems: N-401 operations dashboard','SLA: resolve floor issues immediately','Output: safe and orderly clinic operations'],
+      quotes:['Keep every room ready.','Patient flow is clear.','Standards check complete.'] },
     { handle:'@finance_ada', name:'Ada Kusuma', role:'Billing lead', group:'Operations', roleKey:'finance', home:[4.6,3.4,92], room:'B-402', uniform:'#ffffff', hair:'#3f3f46', skin:'#f0c2a0', acc:'glasses',
       lay:'Ada closes the visit invoices and keeps insurance questions off the treatment floor.',
       tech:['Inputs: visit codes','Systems: billing desk','SLA: receipt before departure','Output: closed invoice'],
@@ -410,6 +418,7 @@ Add a prop
   const FOCI = {
     full: [18, 15, 8, 0.92],
     yeyen: [26.2, 5.2, 0, 1.45],
+    hengki: [32.5, 6.0, 0, 1.5],
     f2: [12, 4.5, 92, 1.05],
     'R-101': [19, 14.5, 0, 1.15],
     consult: [29.5, 6, 0, 1.25],
@@ -524,9 +533,7 @@ Add a prop
     addBox(gx + 0.15, gy + 0.15, 0.12, 0.8, 6, '#cbd5e1', zz);
     addBox(gx + 1.35, gy + 0.15, 0.12, 0.8, 6, '#cbd5e1', zz);
     addBox(gx, gy, 1.64, 1.1, 1.1, '#ffffff', zz + 6, '#e2e8f0', '#cbd5e1');
-    add({ type:'monitor', gx: gx + 0.35, gy: gy + 0.18, z: zz + 7.2, seed: gx * 3 });
-    add({ type:'monitor', gx: gx + 0.95, gy: gy + 0.18, z: zz + 7.2, seed: gx * 5 });
-    add({ type:'laptop', gx: gx + 0.7, gy: gy + 0.55, z: zz + 7.1 });
+    add({ type:'monitor', gx: gx + 0.62, gy: gy + 0.18, z: zz + 7.2, seed: gx * 3 });
     const cx = gx + 0.55, cy = flip ? gy - 0.15 : gy + 1.15;
     chair(cx, cy, zz, accent, flip);
     return { x: cx + 0.2, y: cy + 0.2, z: zz };
@@ -597,6 +604,10 @@ Add a prop
     planter(24.5, 8.4, 0);
     workstation(30.8, 3.4, 0, COL.mint, false);
     seats['@dr_jessica'] = { x: 31.5, y: 4.7, z: 0 };
+    addBox(32.5, 6.1, 1.5, 0.72, 6.2, '#ffffff', 0, '#e2e8f0', '#cbd5e1');
+    add({ type:'laptop', gx: 32.9, gy: 6.25, z: 6.3 });
+    chair(33.0, 7.2, 0, COL.sky, false);
+    seats['@dr_hengki'] = { x: 33.2, y: 7.4, z: 0 };
     addBox(31.2, 5.8, 0.7, 0.7, 3, '#ffffff', 0);
     whiteboard(30.3, 2.3, 14);
     glassPartition(29.35, 2.4, 9.2, 0);
@@ -654,14 +665,14 @@ Add a prop
     planter(2.6, 6.4, 92); planter(10.2, 6.4, 92);
     workstation(3.4, 5.2, 92, COL.gold, false);
     seats['@finance_ada'] = { x: 4.1, y: 6.5, z: 92 };
-    workstation(6.4, 5.2, 92, COL.lav, false);
-    workstation(8.6, 5.2, 92, COL.blush, false);
-    seats['@brand_leo'] = { x: 7.1, y: 6.5, z: 92 };
-    seats['@social_zoe'] = { x: 9.3, y: 6.5, z: 92 };
+    seats['@brand_leo'] = { x: 6.8, y: 4.7, z: 92 };
+    seats['@social_zoe'] = { x: 7.8, y: 4.7, z: 92 };
+    add({ type:'laptop', gx: 6.5, gy: 3.55, z: 98.2 });
+    add({ type:'laptop', gx: 7.6, gy: 3.55, z: 98.2 });
 
     add({ type:'videowall', gx: 13.2, gy: 1.25, z: 108 });
-    for (let i = 0; i < 5; i++) {
-      const accent = i < 3 ? [COL.sage, COL.gold, COL.sky][i] : '#cbd5e1';
+    for (let i = 0; i < 3; i++) {
+      const accent = [COL.sage, COL.gold, COL.sky][i];
       workstation(13.2 + i * 1.85, 2.5, 92, accent, false);
     }
     seats['@ops_lucas'] = { x: 13.9, y: 3.8, z: 92 };
@@ -670,6 +681,8 @@ Add a prop
     addBox(13.4, 5.3, 2.2, 0.8, 3, COL.gold, 92);
     addBox(16.4, 5.4, 2.2, 0.8, 3, '#ffffff', 92);
     addBox(15.2, 5.15, 0.7, 0.55, 2.2, '#ffffff', 92);
+    workstation(19.3, 4.5, 92, COL.sage, false);
+    seats['@manager_suwandi'] = { x: 20.0, y: 5.8, z: 92 };
     planter(21.4, 6.2, 92); planter(12.5, 6.3, 92);
     for (let i = 0; i < 4; i++) pendant(14 + i * 1.8, 3.2, 92);
     add({ type:'stairs', gx: 10.6, gy: 5.8, z: 0 });
@@ -992,6 +1005,17 @@ Add a prop
       quotes: PATIENT_LINES
     }, true);
   }
+  function makeVVIPPatient() {
+    const a = makeActor({
+      handle:'@vvip_nilbean', name:'Nilbean', role:'VVIP Patient', group:'Guest', roleKey:'reception',
+      home:[30.2,15.8,0], room:'L-105', uniform:'#f7efe2', hair:'#3f3f46', skin:'#e7b48f', acc:'glasses', vvip:true,
+      lay:'Nilbean is a VVIP patient visiting SKINDERMA for a private physician consultation and a personalised treatment plan.',
+      tech:['Private arrival and lounge','Physician-led consultation','Dedicated treatment bay','Discreet aftercare handoff'],
+      quotes:['The clinic feels calm.','Thank you for the private care.','Everything is excellent.']
+    }, false);
+    a.nextBreak = 14;
+    return a;
+  }
   function beginScript(g) {
     g.si = 0;
     const step = g.script[0];
@@ -1194,7 +1218,7 @@ Add a prop
       return;
     }
     if (p.type === 'thermo' || p.type === 'bars' || p.type === 'board' || p.type === 'mirror' || p.type === 'camera') {
-      const caption = p.type === 'thermo' ? '4.2 C' : p.type === 'bars' ? 'Load' : p.type === 'camera' ? 'Cam' : p.type === 'board' ? 'Plan' : '';
+      const caption = p.type === 'thermo' ? '4.2 C' : p.type === 'bars' ? 'Load' : '';
       drawWallScreen(p.gx, p.gy, p.z, p.type === 'board' || p.type === 'mirror' ? 0.9 : 1.05, caption, p.type === 'bars');
       return;
     }
@@ -1232,7 +1256,7 @@ Add a prop
     ctx.fillRect(o.x + 2.5 * zm, o.y - (h - 6.5) * zm, (2 + (Math.cos(simT * 1.1 + seed) + 1) * (w - 6) / 2.4) * zm, 1.8 * zm);
   }
   function deviceChip(p, lift) {
-    if (!p.label || view.zoom < 1.05) return;
+    if (!p.label || view.zoom < 1.35) return;
     const o = iso(p.gx + 0.2, p.gy + 0.2, (p.z || 0) + lift);
     ctx.font = '700 9.5px sans-serif';
     const w = ctx.measureText(p.label).width + 10;
@@ -1380,14 +1404,14 @@ Add a prop
     const cx = (a.x + c.x) / 2, cy = (a.y + c.y) / 2;
     ctx.fillStyle = 'rgba(255,255,255,.55)';
     ctx.beginPath(); ctx.ellipse(cx + Math.sin(t * 0.5) * 6 * zm, cy, 12 * zm, 5 * zm, -0.25, 0, 7); ctx.fill();
-    ctx.restore();
-    if (zm >= 0.7) {
+    if (zm >= 1.18) {
       const label = [p.title, 'Glow facials', 'Sun care tips'][scene];
       ctx.font = '700 ' + Math.max(8, 9.5 * Math.min(zm, 1.3)) + 'px sans-serif';
       const tw = ctx.measureText(label).width;
       ctx.fillStyle = '#2c3a32';
       ctx.fillText(label, cx - tw / 2, cy + 3.5 * zm);
     }
+    ctx.restore();
   }
   function clipText(text, maxW) {
     if (ctx.measureText(text).width <= maxW) return text;
@@ -1414,7 +1438,7 @@ Add a prop
         ctx.fillRect(x + 4 + i * (w / 5), y + h - 3 - bh, Math.max(2, w / 8), bh);
       }
     }
-    if (caption && view.zoom > 0.55) {
+    if (caption && view.zoom >= 1.18) {
       ctx.fillStyle = '#3f4a3c';
       ctx.font = '600 ' + Math.max(7, 8 * sc) + 'px sans-serif';
       const shown = clipText(caption, w - 8);
@@ -1476,10 +1500,10 @@ Add a prop
     const p = iso(s.gx, s.gy, s.z);
     const sc = Math.max(0.75, view.zoom);
     const y = p.y - bob;
-    ctx.fillStyle = s.vip ? 'rgba(196,162,101,.45)' : 'rgba(80,70,50,.16)';
+    ctx.fillStyle = (s.vip || s.vvip) ? 'rgba(196,162,101,.45)' : 'rgba(80,70,50,.16)';
     ctx.beginPath(); ctx.ellipse(p.x, p.y + 1, 9 * sc, 4.2 * sc, 0, 0, 7); ctx.fill();
-    if (s === selected || s.vip) {
-      ctx.strokeStyle = s.vip ? '#C4A265' : '#3f7d68';
+    if (s === selected || s.vip || s.vvip) {
+      ctx.strokeStyle = (s.vip || s.vvip) ? '#C4A265' : '#3f7d68';
       ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.ellipse(p.x, p.y + 1, 11 * sc, 5 * sc, 0, 0, 7); ctx.stroke();
     }
@@ -1512,35 +1536,37 @@ Add a prop
     ctx.fillStyle = '#3f7d68';
     ctx.fillRect(p.x + 2.6 * sc, y - 14.5 * sc, 3.4 * sc, 0.9 * sc);
     if (s.acc === 'surgical') { ctx.fillStyle = '#dff3ea'; ctx.fillRect(p.x - 4.6 * sc, y - 23.4 * sc, 9.2 * sc, 3.2 * sc); }
-    if (s.vip) {
+    if (s.vip || s.vvip) {
       ctx.fillStyle = '#C4A265';
       ctx.beginPath();
       ctx.moveTo(p.x, y - 40 * sc); ctx.lineTo(p.x + 4 * sc, y - 35 * sc); ctx.lineTo(p.x, y - 30 * sc); ctx.lineTo(p.x - 4 * sc, y - 35 * sc); ctx.closePath(); ctx.fill();
     }
-    const showTag = view.zoom >= 0.72 || s === selected || s === hover || s.vip;
-    const tag = (s.vip && (view.zoom >= 0.85 || s === selected)) ? s.name : s.handle;
+    const important = s.vip || s.vvip;
+    const showTag = view.zoom >= 1.08 || s === selected || s === hover || important;
+    const tag = (important && (view.zoom >= 0.85 || s === selected)) ? s.name : s.handle;
     if (!showTag && !(s.say && t < s.sayUntil)) return;
     if (!showTag) {
-      if (s.say && t < s.sayUntil) drawNote(s.say, p.x, y - 36 * sc);
+      if (s.say && t < s.sayUntil && view.zoom >= 0.88) drawNote(s.say, p.x, y - 36 * sc);
       return;
     }
-    const fill = s.vip ? '#C4A265' : (TAG[s.group] || '#fff');
+    const fill = important ? '#C4A265' : (TAG[s.group] || '#fff');
     ctx.font = '700 ' + Math.max(10, 11 * Math.min(sc, 1.15)) + 'px sans-serif';
     const tw = ctx.measureText(tag).width + 12;
     const tx = p.x - tw / 2;
-    const ty = y - (s.vip ? 52 : 46) * sc;
+    const ty = y - (important ? 52 : 46) * sc;
     ctx.fillStyle = 'rgba(60,50,30,.12)';
     round(tx + 1, ty + 2, tw, 16, 8);
     ctx.fillStyle = fill;
     ctx.strokeStyle = 'rgba(255,255,255,.85)';
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.roundRect(tx, ty, tw, 16, 8); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = s.vip || s.group === 'Medical' || s.group === 'Facilities' ? '#fff' : '#2c3a32';
+    ctx.fillStyle = important || s.group === 'Medical' || s.group === 'Facilities' ? '#fff' : '#2c3a32';
     ctx.fillText(tag, tx + 6, ty + 12);
-    if (s.say && t < s.sayUntil) drawNote(s.say, p.x, ty - 20);
+    if (s.say && t < s.sayUntil && (view.zoom >= 0.88 || s === selected || important)) drawNote(s.say, p.x, ty - 20);
   }
   function drawNameplate(r) {
-    if (r.label && view.zoom < 0.7) return;
+    if (r.label && view.zoom < 1.12) return;
+    if (!r.label && view.zoom < 0.82 && activeFocus !== r.id) return;
     const p = iso(r.gx + 0.7, r.gy + 0.35, (r.z || 0) + (r.label ? 8 : 24));
     const label = (r.z ? '2F ' : '1F ') + r.short;
     ctx.font = '700 11px sans-serif';
@@ -1568,7 +1594,11 @@ Add a prop
         }
       }
       ctx.globalAlpha = alpha;
-      [[2.2, 7.8],[10.2, 7.8],[22.6, 7.8]].forEach(([x, y]) => box(x, y, 0.5, 0.5, 120, '#f8fafc', '#e2e8f0', '#cbd5e1', '#94a3b8', 0));
+      [[1.8, 7.65],[12.1, 7.65],[22.65, 7.65]].forEach(([x, y]) => box(x, y, 0.42, 0.42, 90, '#f8fafc', '#e2e8f0', '#cbd5e1', '#94a3b8', 0));
+    }
+    if (z === 92) {
+      box(1.5, 0.5, 22, 7.7, 2, '#fffdf8', '#e7e1d6', '#d5cec1', 'rgba(180,170,150,.28)', 90);
+      box(1.5, 7.75, 22, 0.35, 2.2, '#ffffff', '#e7e1d6', '#d5cec1', null, 90);
     }
     ROOMS.filter((r) => (r.z || 0) === z && r.floor).forEach((r) => floorQuad(r.gx, r.gy, r.gw, r.gh, z + 0.6, '#fffdf8', '#f0e6d4'));
     if (z === 0) {
@@ -1668,7 +1698,8 @@ Add a prop
     const availW = Math.max(140, W - inset.left - inset.right);
     const availH = Math.max(140, H - inset.top - inset.bottom);
     const { min, max } = zoomLimits();
-    const zoom = Math.max(min, Math.min(max, Math.min(availW / (maxX - minX), availH / (maxY - minY)) * 0.94));
+    const paddingScale = W < 700 ? 0.82 : 0.94;
+    const zoom = Math.max(min, Math.min(max, Math.min(availW / (maxX - minX), availH / (maxY - minY)) * paddingScale));
     view.tz = zoom;
     view.tx = inset.left + availW / 2 - ((minX + maxX) / 2) * zoom;
     view.ty = inset.top + availH / 2 - ((minY + maxY) / 2) * zoom;
@@ -1963,7 +1994,7 @@ Add a prop
   function buildTools() {
     const tools = document.getElementById('tools');
     const buttons = [
-      ['full','Full Clinic'], ['yeyen','dr. Yeyen'], ['f2','2F Boardroom & Ops'], ['R-101','1F Reception'],
+      ['full','Full Clinic'], ['yeyen','dr. Yeyen'], ['hengki','dr. Hengki'], ['f2','2F Boardroom & Ops'], ['R-101','1F Reception'],
       ['consult','1F Consultations'], ['treat','1F Treatment Suites'], ['L-105','1F Waiting Lounge'],
       ['P-110','1F Mini Kitchen'], ['M-130','1F Meeting Room'], ['S-120','1F Sterilisation'], ['D-108','1F Lockers']
     ];
@@ -2007,6 +2038,7 @@ Add a prop
 
   furnish();
   STAFF.forEach((s) => { const a = makeActor(s); a.tab = 'Layman'; actors.push(a); });
+  { const a = makeVVIPPatient(); a.tab = 'Layman'; actors.push(a); }
   buildTools();
   bootLogo();
   resize();
