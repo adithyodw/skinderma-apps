@@ -188,6 +188,11 @@ export default function App() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Wordmark sub={false}/>
           <Pill tone="gold">App preview</Pill>
+          <a href="/v2/" style={{
+            textDecoration: 'none', background: '#fff', color: 'var(--teal)',
+            border: '1px solid var(--line)', borderRadius: 99, padding: '5px 11px',
+            fontSize: 11, fontWeight: 600, letterSpacing: 0.3,
+          }}>Lobby v2</a>
         </div>
         <LanguagePill lang={lang} onChange={setLang}/>
       </div>

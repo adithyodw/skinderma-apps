@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>SKINDERMA · Lobby Dashboard v2</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%235FB382'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E"/>
+<!--
+SKINDERMA v2 — isometric staff lobby (v1 patient app stays at /).
+Open this file directly, or visit /v2/ on the deployed site.
+
+Helpers
+  iso(gx,gy,gz) / unIso(sx,sy) — tile projection and click inverse
+  box(gx,gy,gw,gh,h,top,left,right,stroke,z) — 3-face prism
+  chair, workstation, sofa, planter, pendant, wallTV, whiteboard
+  glassPartition, autoclave, laserTower, treatmentBed, sanitiser, nameplate
+  drawSim, astar, goTo
+
+Add a room
+  Push an object into ROOMS (id, gx, gy, gw, gh, z, floor, grid, wall, short, name).
+  Set shell:true for outer walls. Add a focus entry in FOCI and a button in the top bar.
+  Furnish it inside furnish().
+
+Add a Sim
+  Push into STAFF (unique home seat, roleKey matching PLAYBOOKS, quotes, layman, technical).
+  Seat them with workstation() or a stool inside furnish() if they use a desk.
+
+Add a prop
+  Call box / planter / pendant / sofa / wallTV from furnish(). Keep tall props
+  out of the first 40% of a room's back wall so the nameplate stays visible.
+-->
+<style>
+  :root {
+    --ink:#3f4a3c; --muted:#6d7468; --line:#e6e0d4; --rose:#E85D75; --sage:#3f7d68; --gold:#C4A265;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; overflow:hidden; background:linear-gradient(180deg,#f7f3ea,#fbf8f2); color:var(--ink);
+    font-family: "Segoe UI", ui-sans-serif, system-ui, sans-serif; }
+  canvas { display:block; width:100%; height:100%; touch-action:none; }
+  button, input { font-family: inherit; }
+  .glass { background:rgba(255,255,255,.86); backdrop-filter:blur(14px); border:1px solid var(--line);
+    border-radius:16px; box-shadow:0 10px 30px rgba(15,23,42,.08); }
+  .top-left { position:fixed; z-index:5; top:10px; left:14px; max-width:520px; pointer-events:none; }
+  .top-left a, .top-left button { pointer-events:auto; }
+  .brand { display:flex; gap:8px; align-items:flex-start; }
+  .mark { width:28px; height:28px; flex:none; }
+  h1 { margin:0; font-size:15px; font-weight:700; letter-spacing:-.02em; color:#2c3a32; }
+  h1 span { font-weight:600; color:#6d7468; }
+  .sub { margin:3px 0 0; color:var(--muted); font-size:12px; line-height:1.35; max-width:640px; }
+  .vip { display:inline-flex; margin-left:8px; background:#fff6df; color:#8a6a12; border:1px solid #ead7a2;
+    border-radius:99px; padding:1px 8px; font-size:12px; font-weight:700; font-style:normal; vertical-align:1px; }
+  .back { color:var(--sage); font-weight:700; text-decoration:none; }
+  .top-right { position:fixed; z-index:5; top:52px; right:12px; left:12px; display:flex; flex-wrap:wrap;
+    gap:6px; justify-content:flex-start; align-items:center; pointer-events:none; }
+  .top-right button, .top-right .status { pointer-events:auto; }
+  .pill, .top-right button { border:1px solid #e4ddd0; background:#fff; color:#3f4a3c; border-radius:8px;
+    padding:4px 9px; font-size:12px; cursor:pointer; box-shadow:0 1px 0 rgba(255,255,255,.8); }
+  .pill.on, button.on { background:#3f7d68; color:#fff; border-color:#3f7d68; }
+  button.danger { color:var(--rose); border-color:#f4c3cd; }
+  button.danger.on { background:var(--rose); color:#fff; border-color:var(--rose); }
+  .status { font-size:12px; padding:6px 10px; border-radius:99px; background:#f8fafc; border:1px solid var(--line); color:var(--muted); }
+  .status.live { color:#166534; background:#ecfdf3; border-color:#bbf7d0; }
+  .ticker { position:fixed; z-index:4; left:0; right:0; bottom:0; height:32px; display:flex; align-items:center;
+    gap:16px; padding:0 14px; background:rgba(255,253,248,.94); border-top:1px solid #e6e0d4; overflow:hidden; }
+  .ticker b { font-size:12px; white-space:nowrap; }
+  .marquee { overflow:hidden; flex:1; }
+  .marquee span { display:inline-block; white-space:nowrap; animation:slide 90s linear infinite; font-size:12px; color:var(--muted); }
+  @keyframes slide { from { transform:translateX(0); } to { transform:translateX(-50%); } }
+  .drawer { position:fixed; z-index:6; top:0; right:0; height:100%; width:min(390px,100%); transform:translateX(104%);
+    transition:transform .28s cubic-bezier(.16,1,.3,1); background:#fff; border-left:1px solid var(--line);
+    box-shadow:-12px 0 40px rgba(15,23,42,.08); display:flex; flex-direction:column; padding:16px 16px 48px; }
+  .drawer.open { transform:translateX(0); }
+  .drawer header { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
+  .avatar { width:72px; height:72px; border-radius:18px; background:#f8fafc; border:1px solid var(--line); }
+  .tabs { display:flex; gap:4px; margin:12px 0; flex-wrap:wrap; }
+  .tabs button { border:none; background:#f1f5f9; border-radius:8px; padding:6px 8px; font-size:12px; cursor:pointer; }
+  .tabs button.on { background:#5FB382; color:#fff; }
+  .panel { overflow:auto; font-size:13px; line-height:1.5; color:#334155; flex:1; }
+  .panel ul { margin:8px 0 0; padding-left:18px; }
+  pre.code { background:#f8fafc; border:1px solid var(--line); border-radius:12px; padding:12px; overflow:auto;
+    font-family: ui-monospace, Consolas, monospace; font-size:12px; line-height:1.45; }
+  .kw { color:#7c3aed; } .st { color:#0f766e; } .cm { color:#94a3b8; }
+  .runlog { font-family: ui-monospace, Consolas, monospace; font-size:12px; background:#f8fafc; border-radius:12px;
+    border:1px solid var(--line); min-height:140px; padding:10px; white-space:pre-wrap; }
+  .rowbtns { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
+  .rowbtns button, .closebtn { border:1px solid var(--line); background:#fff; border-radius:99px; padding:7px 10px; cursor:pointer; font-size:12px; }
+  .primary { background:var(--sage) !important; color:#fff !important; border-color:var(--sage) !important; }
+  .term { position:fixed; z-index:7; left:14px; right:14px; bottom:46px; height:210px; display:none; flex-direction:column; padding:10px 12px; }
+  .term.open { display:flex; }
+  .term .out { flex:1; overflow:auto; font-family:ui-monospace, Consolas, monospace; font-size:12px; color:#1e293b; white-space:pre-wrap; }
+  .term form { display:flex; gap:8px; }
+  .term input { flex:1; border:1px solid var(--line); border-radius:10px; padding:8px 10px; font-family:ui-monospace, Consolas, monospace; }
+  @media (max-width: 900px) {
+    .top-right { left:14px; top:auto; bottom:46px; justify-content:flex-start; max-height:34vh; overflow:auto; }
+    .term { bottom:46px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<aside class="top-left">
+  <div class="brand">
+    <canvas class="mark" id="logo" width="72" height="72"></canvas>
+    <div>
+      <h1>SKINDERMA Clinic <span>(1F &amp; 2F)</span> <em class="vip">dr. Yeyen Handoko · Medical Director</em></h1>
+      <p class="sub">Aesthetic clinic staff — click a Sim to see what they do, read their playbook, run their task, or hand it to the assistant. <a class="back" href="/">Patient app v1</a></p>
+    </div>
+  </div>
+</aside>
+<div class="top-right" id="tools"></div>
+<div class="ticker">
+  <b id="clockline">SKINDERMA · 2 floors</b>
+  <div class="marquee"><span id="tick"></span></div>
+</div>
+<aside class="drawer" id="drawer">
+  <header>
+    <div style="display:flex;gap:12px;align-items:center">
+      <canvas class="avatar" id="avatar" width="144" height="144"></canvas>
+      <div>
+        <strong id="d-name"></strong>
+        <div id="d-role" style="color:#64748b;font-size:12px"></div>
+        <div id="d-state" style="font-size:12px;margin-top:4px"></div>
+      </div>
+    </div>
+    <button class="closebtn" id="d-close" type="button">Close</button>
+  </header>
+  <div class="tabs" id="tabs"></div>
+  <div class="panel" id="panel"></div>
+</aside>
+<section class="term glass" id="term">
+  <div class="out" id="termout"></div>
+  <form id="termform"><input id="termin" autocomplete="off" placeholder="help"/><button class="primary" type="submit">Run</button></form>
+</section>
+<script>
+(() => {
+  const TW = 28, TH = 14;
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+      const radius = Math.min(r || 0, w / 2, h / 2);
+      this.moveTo(x + radius, y);
+      this.arcTo(x + w, y, x + w, y + h, radius);
+      this.arcTo(x + w, y + h, x, y + h, radius);
+      this.arcTo(x, y + h, x, y, radius);
+      this.arcTo(x, y, x + w, y, radius);
+      this.closePath();
+    };
+  }
+  const view = { x: 700, y: 280, zoom: 0.78, tx: 700, ty: 280, tz: 0.78, glide: true };
+  let W = 1280, H = 800, simT = 0, speed = 1, paused = false, showFull = true, pinkUntil = 0;
+  let backend = false, selected = null, hover = null, drag = null;
+  const actors = [];
+  const PROPS = [];
+  const termLines = [];
+
+  const COL = {
+    blush:'#F4A7B9', rose:'#E85D75', mint:'#7ED3B2', sage:'#5FB382', sky:'#8EC5FF',
+    lav:'#B8A1F2', gold:'#F2C14E', peach:'#F6C7A8', white:'#ffffff', fog:'#f8fafc',
+    line:'#e2e8f0', slate:'#cbd5e1', mute:'#94a3b8'
+  };
+
+  const ROOMS = [
+    { id:'R-101', short:'Reception', name:'Reception & Waiting Lounge', gx:11, gy:10, gw:16, gh:9, z:0, floor:'#fff5f8', grid:'#f6d5e0', wall:COL.blush, shell:true },
+    { id:'C-201', short:'Consult A', name:'Consultation C-201', gx:24, gy:2, gw:5, gh:8, z:0, floor:'#f3fbf7', grid:'#d7f3e6', wall:COL.mint, shell:true },
+    { id:'C-202', short:'Consult B', name:'Consultation C-202', gx:30, gy:2, gw:5, gh:8, z:0, floor:'#f3fbf7', grid:'#d7f3e6', wall:COL.mint, shell:true },
+    { id:'P-110', short:'Pantry', name:'Staff Pantry', gx:2, gy:10, gw:8, gh:9, z:0, floor:'#fff7f1', grid:'#f8e0d0', wall:COL.peach, shell:true },
+    { id:'T-300', short:'Treatment', name:'Treatment Suites', gx:23, gy:19, gw:12, gh:9, z:0, floor:'#f7f4ff', grid:'#e4dcfa', wall:COL.lav, shell:true },
+    { id:'T-301', short:'T-301', name:'Treatment bay T-301', gx:23.4, gy:19.5, gw:5.5, gh:4, z:0, shell:false, label:true },
+    { id:'T-302', short:'T-302', name:'Treatment bay T-302', gx:29.2, gy:19.5, gw:5.5, gh:4, z:0, shell:false, label:true },
+    { id:'T-303', short:'T-303', name:'Treatment bay T-303', gx:23.4, gy:23.8, gw:5.5, gh:4, z:0, shell:false, label:true },
+    { id:'T-304', short:'T-304', name:'Treatment bay T-304', gx:29.2, gy:23.8, gw:5.5, gh:4, z:0, shell:false, label:true },
+    { id:'S-120', short:'Sterile', name:'Sterilisation & Equipment', gx:11, gy:21, gw:11, gh:7, z:0, floor:'#f3f9ff', grid:'#d6ebff', wall:COL.sky, shell:true },
+    { id:'L-105', short:'Lounge', name:'Patient Lounge', gx:28, gy:11, gw:7, gh:7, z:0, floor:'#fff5f7', grid:'#f8d0da', wall:COL.rose, shell:true },
+    { id:'D-108', short:'Lockers', name:'Changing Rooms', gx:2, gy:20, gw:8, gh:8, z:0, floor:'#f3fbf7', grid:'#d7f3e6', wall:COL.mint, shell:true },
+    { id:'B-402', short:'Board', name:'Executive Boardroom', gx:2, gy:1, gw:10, gh:7, z:92, floor:'#f3f9ff', grid:'#d6ebff', wall:COL.sky, shell:true },
+    { id:'N-401', short:'Ops', name:'Clinic Operations', gx:12, gy:1, gw:11, gh:7, z:92, floor:'#fff9ee', grid:'#f8e7bf', wall:COL.gold, shell:true }
+  ];
+
+  const DOORS = [[22,10],[23,10],[25,10],[26,10],[6,20],[7,20],[16,21],[17,21],[26,19],[27,19],[30,6],[11,7],[12,7]];
+  const PLAYBOOKS = {
+    reception: {
+      code: 'def check_in_patient(queue):\n    card = read_member_card()\n    slot = next_open_consult()\n    print_wristband(card)\n    return call_to(slot)',
+      steps: ['Reading the queue board','Confirming member card','Assigning consultation room','Printing visit wristband','Paging the physician','Check-in complete — guest seated'],
+      result: 'Guest checked in — called to consultation'
+    },
+    concierge: {
+      code: 'def retail_handoff(sku):\n    shelf = scan_retail(sku)\n    if shelf.stock < 2: reorder(sku)\n    return bag_and_note(sku)',
+      steps: ['Scanning retail shelf','Matching homecare to last visit','Bagging SPF and cleanser','Noting the chart','Stock check complete','Retail handoff ready'],
+      result: 'Homecare set packed — SPF 50+ and cleanser'
+    },
+    director: {
+      code: 'def oversee_clinic():\n    review_complex_cases()\n    sign_protocols()\n    return huddle("all rooms on schedule")',
+      steps: ['Opening the day list','Reviewing melasma cases','Signing laser protocols','Huddle with nurses','Checking both Batam rooms','Clinic board is clear'],
+      result: 'Protocols signed — both rooms on schedule'
+    },
+    physician: {
+      code: 'def consult(patient):\n    photos = skin_analysis()\n    plan = choose_protocol(photos)\n    return consent_and_book(plan)',
+      steps: ['Greeting the patient','Running skin analysis','Comparing before and after','Writing the protocol','Consent captured','Consultation booked to treatment'],
+      result: 'Plan filed — acne protocol, 6 sessions'
+    },
+    nurse: {
+      code: 'def run_bay(bay):\n    prep_bed(bay)\n    calibrate_laser()\n    treat(zone="cheeks")\n    return cool_down()',
+      steps: ['Preparing the treatment bed','Confirming consent','Calibrating the handpiece','Treating the marked zone','Cooling pass','Chart updated — session complete'],
+      result: 'Bay session complete — cooling done'
+    },
+    steri: {
+      code: 'def autoclave_cycle():\n    load = pack_instruments()\n    run_cycle(minutes=18)\n    return release_if_green(load)',
+      steps: ['Packing instrument trays','Starting autoclave cycle','Watching status LEDs','Cycle hold','Biological indicator checked','Autoclave cycle complete — 32 instruments'],
+      result: 'Autoclave cycle complete — 32 instruments'
+    },
+    pharma: {
+      code: 'def serum_count():\n    temps = read_fridge()\n    gaps = count_vials()\n    return reorder(gaps)',
+      steps: ['Reading fridge temperature','Counting serum vials','Flagging low stock','Updating the inventory sheet','Cold chain OK','Reorder queued for PDRN'],
+      result: 'Serum fridge 4.2 C — reorder queued'
+    },
+    ops: {
+      code: 'def watch_flow():\n    rooms = live_map()\n    delays = [r for r in rooms if r.wait > 12]\n    return rebalance(delays)',
+      steps: ['Reading the live clinic map','Checking wait times','Moving one booking','Updating the video wall','Supplies ping sent','Flow is back under 12 minutes'],
+      result: 'Schedule rebalanced — waits under 12 min'
+    },
+    finance: {
+      code: 'def close_invoice(visit):\n    cover = check_insurance(visit)\n    return issue_receipt(cover)',
+      steps: ['Opening the visit ledger','Checking cover','Posting the treatment codes','Issuing the receipt','Syncing the day sheet','Invoice closed'],
+      result: 'Receipt issued for the morning list'
+    },
+    brand: {
+      code: 'def cut_social(asset):\n    frames = select_stills(asset)\n    return schedule(frames, channel="journal")',
+      steps: ['Pulling consented stills','Cropping for the journal','Writing the caption','Scheduling the post','Brand check passed','Story queued'],
+      result: 'Journal story queued for this evening'
+    },
+    facilities: {
+      code: 'def round():\n    for room in CLINIC:\n        restock_sanitiser(room)\n        log_linen(room)\n    return "round complete"',
+      steps: ['Starting the floor round','Restocking sanitiser','Swapping linen','Checking the fire exit','Wiping the lounge tables','Round complete'],
+      result: 'Facilities round complete'
+    },
+    wellness: {
+      code: 'def aftercare(patient):\n    plan = home_protocol(patient)\n    coach(plan)\n    return book_review(days=14)',
+      steps: ['Reviewing the aftercare card','Coaching sunscreen timing','Booking the 14-day review','Logging loyalty points','Lounge brief done','Aftercare plan handed over'],
+      result: 'Aftercare plan set — review in 14 days'
+    }
+  };
+
+  const STAFF = [
+    { handle:'@reception_mia', name:'Mia Hartono', role:'Receptionist', group:'Front of House', roleKey:'reception', home:[15.2,13.2,0], room:'R-101', uniform:'#ffffff', hair:'#3b2f2f', skin:'#f3c7a8', acc:'headband',
+      lay:'Mia keeps the front door calm. She checks patients in, calls queue numbers, and walks first-time guests to the right sofa.',
+      tech:['Inputs: member card, appointment slot','Systems: queue board, reception desk','SLA: check-in under 4 minutes','Output: room call and wristband'],
+      quotes:['Queue A is moving.','Welcome to SKINDERMA.','I will call you to consult.'] },
+    { handle:'@reception_jun', name:'Jun Wijaya', role:'Receptionist', group:'Front of House', roleKey:'reception', home:[18.4,13.2,0], room:'R-101', uniform:COL.blush, hair:'#1f2937', skin:'#e8b896', acc:'glasses',
+      lay:'Jun runs the second desk: payments, reminders, and the wall queue so the lounge never stacks up.',
+      tech:['Inputs: booking list, card terminal','Systems: reception CRM','SLA: phone pickup under 3 rings','Output: confirmed arrival'],
+      quotes:['Card terminal is ready.','Next number is up.','Two seats just opened.'] },
+    { handle:'@concierge_lea', name:'Lea Putri', role:'Patient concierge', group:'Front of House', roleKey:'concierge', home:[24.4,15.6,0], room:'R-101', uniform:COL.mint, hair:'#6b3f2a', skin:'#f6d3b8', acc:'visor',
+      lay:'Lea looks after the skincare shelf and helps patients leave with the homecare their doctor actually prescribed.',
+      tech:['Inputs: protocol, shelf SKU','Systems: retail cabinet','SLA: handoff before departure','Output: bagged homecare'],
+      quotes:['This SPF matches your plan.','Shelf is faced.','I will walk this to the desk.'] },
+    { handle:'@dr_yeyen', name:'dr. Yeyen Handoko', role:'Medical Director', group:'Medical', roleKey:'director', home:[26.2,4.2,0], room:'C-201', vip:true, uniform:'#ffffff', hair:'#111827', skin:'#f0c2a0', acc:'glasses',
+      lay:'dr. Yeyen founded SKINDERMA and still sees complex acne and melasma herself. Everyone can be called to her room.',
+      tech:['Inputs: photos, prior chart, protocol library','Systems: consult room C-201','SLA: director review same day','Output: signed plan'],
+      quotes:['Good morning, team.','Show me the pigment map.','We stay evidence-based.'] },
+    { handle:'@dr_jessica', name:'dr. Jessica Pandora', role:'Aesthetic physician', group:'Medical', roleKey:'physician', home:[32.2,4.2,0], room:'C-202', uniform:'#ffffff', hair:'#7c4a2d', skin:'#f7d2b4', acc:'headband',
+      lay:'dr. Jessica runs energy-device consults, especially HIFU, and shares C-202 with the skin camera.',
+      tech:['Inputs: concern, Fitzpatrick, photos','Systems: C-202 camera and monitors','SLA: plan before treatment','Output: consented protocol'],
+      quotes:['Let us map the laxity.','HIFU only after photos.','I will see you in the bay.'] },
+    { handle:'@dr_intan', name:'dr. Intan Ratu Anjani', role:'Anti-aging physician', group:'Medical', roleKey:'physician', home:[27.3,6.8,0], room:'C-201', uniform:COL.lav, hair:'#1f2937', skin:'#e7b48f', acc:'glasses',
+      lay:'dr. Intan plans bio-stimulators and PDRN, and sits beside dr. Yeyen when a case needs a second read.',
+      tech:['Inputs: skin quality score','Systems: side station in C-201','SLA: dual sign-off on stimulators','Output: staged plan'],
+      quotes:['Barrier first, then stimulus.','PDRN is on the board.','I agree with the staging.'] },
+    { handle:'@nurse_hana', name:'Hana Lim', role:'Treatment nurse', group:'Medical', roleKey:'nurse', home:[26.3,21.4,0], room:'T-301', uniform:COL.mint, hair:'#111827', skin:'#f3c7a8', acc:'cap',
+      lay:'Hana runs bay T-301: she preps the bed, checks consent, and stays with the patient through cooling.',
+      tech:['Inputs: consented plan, bay id','Systems: bed, trolley, lamp','SLA: bay ready in 5 minutes','Output: session chart'],
+      quotes:['T-301 is dressed.','Consent is on the trolley.','Cooling pack is ready.'] },
+    { handle:'@nurse_tomas', name:'Tomas Rahman', role:'Laser technician', group:'Medical', roleKey:'nurse', home:[31.6,21.4,0], room:'T-302', uniform:'#ffffff', hair:'#3f3f46', skin:'#c98b62', acc:'surgical',
+      lay:'Tomas looks after the laser tower in T-302 and calls the physician before the first pass.',
+      tech:['Inputs: wavelength, fluence','Systems: laser tower T-302','SLA: test spot logged','Output: treated zone'],
+      quotes:['Test spot looks even.','Eyewear on, please.','Tower is calibrated.'] },
+    { handle:'@nurse_priya', name:'Priya Santoso', role:'Treatment nurse', group:'Medical', roleKey:'nurse', home:[26.3,25.4,0], room:'T-303', uniform:COL.blush, hair:'#4c1d95', skin:'#e8b896', acc:'headphones',
+      lay:'Priya keeps T-303 quiet and precise, especially for pigment work that needs a steady hand.',
+      tech:['Inputs: zone map','Systems: bay T-303','SLA: photos before and after','Output: cooled, charted visit'],
+      quotes:['T-303 is free.','I have the after photo.','Linen is fresh.'] },
+    { handle:'@nurse_kai', name:'Kai Navarro', role:'Laser technician', group:'Medical', roleKey:'nurse', home:[31.6,25.4,0], room:'T-304', uniform:COL.sky, hair:'#92400e', skin:'#f6d3b8', acc:'propeller',
+      lay:'Kai floats between the lower bays and wheels the spare laser tower when a room swaps devices.',
+      tech:['Inputs: device booking','Systems: mobile laser tower','SLA: swap under 8 minutes','Output: bay back online'],
+      quotes:['Tower is rolling.','T-304 can take the next.','Wheels are locked.'] },
+    { handle:'@steri_omar', name:'Omar Fadli', role:'Sterilisation technician', group:'Clinical Support', roleKey:'steri', home:[13.4,23.4,0], room:'S-120', uniform:'#ffffff', hair:'#111827', skin:'#d9a27a', acc:'surgical',
+      lay:'Omar loads the autoclave row and will not release a tray until the status light is green.',
+      tech:['Inputs: dirty tray','Systems: autoclave bank','SLA: cycle logged','Output: sterile pack'],
+      quotes:['Cycle is running.','Green light on cabinet 3.','Tray released.'] },
+    { handle:'@steri_ines', name:'Ines Tan', role:'Equipment technician', group:'Clinical Support', roleKey:'steri', home:[16.6,23.6,0], room:'S-120', uniform:COL.sky, hair:'#7f1d1d', skin:'#f3c7a8', acc:'visor',
+      lay:'Ines watches the equipment bench, UV cabinet, and the little faults that stop a bay.',
+      tech:['Inputs: fault code','Systems: UV cabinet, bench','SLA: bay-down under 20 minutes','Output: device returned'],
+      quotes:['UV cabinet is clear.','Handpiece passed check.','I will swap the tip.'] },
+    { handle:'@pharma_noor', name:'Noor Aisha', role:'Inventory controller', group:'Clinical Support', roleKey:'pharma', home:[18.8,25.6,0], room:'S-120', uniform:COL.mint, hair:'#1f2937', skin:'#c9845a', acc:'glasses',
+      lay:'Noor owns the serum fridge: temperatures, vial counts, and the reorder before anyone runs out.',
+      tech:['Inputs: fridge probe, par levels','Systems: serum fridge','SLA: cold chain hourly','Output: reorder list'],
+      quotes:['Fridge is at 4 degrees.','PDRN is the low line.','Count matches the sheet.'] },
+    { handle:'@ops_lucas', name:'Lucas Hart', role:'Operations lead', group:'Operations', roleKey:'ops', home:[14.2,3.3,92], room:'N-401', uniform:'#ffffff', hair:'#334155', skin:'#f3c7a8', acc:'headset',
+      lay:'Lucas watches the whole clinic from the video wall and moves bookings when a room runs long.',
+      tech:['Inputs: live room map','Systems: ops wall N-401','SLA: delay flagged at 12 minutes','Output: rebalanced day'],
+      quotes:['All rooms on schedule.','Moving one booking.','Wall is green.'] },
+    { handle:'@ops_sara', name:'Sara Widjaja', role:'Patient-flow monitor', group:'Operations', roleKey:'ops', home:[16.6,3.3,92], room:'N-401', uniform:COL.gold, hair:'#6b3f2a', skin:'#e8b896', acc:'glasses',
+      lay:'Sara tracks who is waiting, who is in a bay, and which physician is free next.',
+      tech:['Inputs: queue and bay state','Systems: operator station 2','SLA: status under 1 minute old','Output: flow note'],
+      quotes:['Lounge has two waiting.','C-202 is free.','Bay turn is on time.'] },
+    { handle:'@ops_wei', name:'Wei Chen', role:'Supplies monitor', group:'Operations', roleKey:'ops', home:[19.0,3.3,92], room:'N-401', uniform:COL.sky, hair:'#111827', skin:'#f6d3b8', acc:'headset',
+      lay:'Wei watches consumables and pings the sterile room before a bay can run dry.',
+      tech:['Inputs: par alerts','Systems: station 3','SLA: pick-face before next session','Output: supply task'],
+      quotes:['Tips are low in T-302.','I pinged sterile.','Hot desk is open.'] },
+    { handle:'@finance_ada', name:'Ada Kusuma', role:'Billing lead', group:'Operations', roleKey:'finance', home:[4.6,3.4,92], room:'B-402', uniform:'#ffffff', hair:'#3f3f46', skin:'#f0c2a0', acc:'glasses',
+      lay:'Ada closes the visit invoices and keeps insurance questions off the treatment floor.',
+      tech:['Inputs: visit codes','Systems: billing desk','SLA: receipt before departure','Output: closed invoice'],
+      quotes:['Ledger is open.','Cover is confirmed.','Receipt is ready.'] },
+    { handle:'@brand_leo', name:'Leo Prasetyo', role:'Brand lead', group:'Marketing', roleKey:'brand', home:[7.2,5.5,92], room:'B-402', uniform:COL.lav, hair:'#1e1b4b', skin:'#e0ac84', acc:'cap',
+      lay:'Leo guards how SKINDERMA looks: only consented clinic photos, never a filter over a real result.',
+      tech:['Inputs: consented stills','Systems: boardroom desk','SLA: brand check before publish','Output: approved frame'],
+      quotes:['No filter on results.','Caption is with the doctor.','This frame is approved.'] },
+    { handle:'@social_zoe', name:'Zoe Halim', role:'Social content', group:'Marketing', roleKey:'brand', home:[9.4,5.5,92], room:'B-402', uniform:COL.blush, hair:'#9a3412', skin:'#f6d3b8', acc:'headphones',
+      lay:'Zoe cuts the journal stories from the boardroom and schedules them after a physician reads the line.',
+      tech:['Inputs: approved stills','Systems: content desk','SLA: physician read-through','Output: scheduled post'],
+      quotes:['Cutting the journal clip.','Waiting on a read-through.','It goes out this evening.'] },
+    { handle:'@facilities_ben', name:'Ben Siregar', role:'Facilities', group:'Facilities', roleKey:'facilities', home:[4.6,23.4,0], room:'D-108', uniform:COL.sage, hair:'#3f3f46', skin:'#c98b62', acc:'cap',
+      lay:'Ben walks every room: sanitiser, linen, lights, and the fire exit. His home base is the locker room.',
+      tech:['Inputs: round checklist','Systems: whole clinic','SLA: full round each hour','Output: closed checklist'],
+      quotes:['Sanitiser topped up.','On my round.','Exit sign is lit.'] },
+    { handle:'@trainer_ivy', name:'Ivy Lestari', role:'Aftercare coach', group:'Wellness', roleKey:'wellness', home:[31.4,15.2,0], room:'L-105', uniform:COL.mint, hair:'#14532d', skin:'#f3c7a8', acc:'headband',
+      lay:'Ivy meets patients in the lounge after treatment and turns the doctor plan into a simple home routine.',
+      tech:['Inputs: aftercare card','Systems: lounge L-105','SLA: coach before they leave','Output: 14-day review'],
+      quotes:['SPF every two hours outside.','I booked your review.','The lounge is quiet.'] }
+  ];
+
+  const FOCI = {
+    full: [18, 15, 8, 0.92],
+    yeyen: [26.2, 5.2, 0, 1.45],
+    f2: [12, 4.5, 92, 1.05],
+    'R-101': [19, 14.5, 0, 1.15],
+    consult: [29.5, 6, 0, 1.25],
+    'P-110': [6, 14.5, 0, 1.3],
+    treat: [29, 23.5, 0, 1.15],
+    'S-120': [16.5, 24.5, 0, 1.3],
+    'L-105': [31.5, 14.5, 0, 1.45],
+    'D-108': [6, 24, 0, 1.4],
+    'T-301': [26, 21.5, 0, 1.6],
+    'T-302': [32, 21.5, 0, 1.6],
+    'T-303': [26, 25.5, 0, 1.6],
+    'T-304': [32, 25.5, 0, 1.6],
+    'C-201': [26.5, 5.5, 0, 1.5],
+    'C-202': [32.5, 5.5, 0, 1.5],
+    'B-402': [7, 4.5, 92, 1.35],
+    'N-401': [17.5, 4.5, 92, 1.3]
+  };
+
+  const BREAKS = [
+    { x:6.2, y:15.2, z:0, say:'Coffee at P-110~' },
+    { x:32.2, y:16.2, z:0, say:'Quick break~' },
+    { x:20.2, y:5.8, z:92, say:'Heading up to the Sky Lounge~' },
+    { x:27.2, y:7.2, z:0, say:'Sync with dr. Yeyen~' }
+  ];
+  const PATROL = [[18,16,0],[26,22,0],[16,24,0],[6,15,0],[4.6,23.4,0]];
+  const TV_MENU = ['Acne Fighter','Melasma programme','HIFU lift','Laser toning','Barrier repair','SPF 50+ homecare'];
+
+  function shade(hex, amt) {
+    const n = parseInt(hex.slice(1), 16);
+    const ch = (i) => Math.max(0, Math.min(255, ((n >> i) & 255) + amt));
+    return '#' + [16, 8, 0].map((i) => ch(i).toString(16).padStart(2, '0')).join('');
+  }
+  function iso(gx, gy, gz = 0) {
+    const z = view.zoom;
+    return { x: (gx - gy) * TW * z + view.x, y: (gx + gy) * TH * z - gz * z + view.y };
+  }
+  function unIso(sx, sy) {
+    const u = (sx - view.x) / (TW * view.zoom);
+    const v = (sy - view.y) / (TH * view.zoom);
+    return { gx: (u + v) / 2, gy: (v - u) / 2 };
+  }
+  function poly(pts, fill, stroke) {
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.closePath();
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); }
+  }
+  function box(gx, gy, gw, gh, h, top, left, right, stroke, z) {
+    const z0 = z || 0, z1 = z0 + h;
+    const a = iso(gx, gy, z1), b = iso(gx + gw, gy, z1), c = iso(gx + gw, gy + gh, z1), d = iso(gx, gy + gh, z1);
+    const b0 = iso(gx + gw, gy, z0), c0 = iso(gx + gw, gy + gh, z0), d0 = iso(gx, gy + gh, z0);
+    poly([d, c, c0, d0], left, stroke);
+    poly([b, c, c0, b0], right, stroke);
+    poly([a, b, c, d], top, stroke);
+  }
+  function floorQuad(gx, gy, gw, gh, z, color, grid) {
+    poly([iso(gx, gy, z), iso(gx + gw, gy, z), iso(gx + gw, gy + gh, z), iso(gx, gy + gh, z)], color, null);
+    if (!grid) return;
+    ctx.strokeStyle = grid;
+    ctx.globalAlpha *= 0.65;
+    ctx.lineWidth = 1;
+    const step = 1;
+    for (let x = 0; x <= gw; x += step) {
+      const p = iso(gx + x, gy, z), q = iso(gx + x, gy + gh, z);
+      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+    }
+    for (let y = 0; y <= gh; y += step) {
+      const p = iso(gx, gy + y, z), q = iso(gx + gw, gy + y, z);
+      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+    }
+    ctx.globalAlpha /= 0.65;
+  }
+  function add(p) { p.sort = (p.gx || 0) + (p.gy || 0) + (p.z || 0) * 0.001; PROPS.push(p); }
+  function addBox(gx, gy, gw, gh, h, top, z, left, right) {
+    add({ type:'box', gx, gy, gw, gh, h, z: z || 0, top, left: left || shade(top, -18), right: right || shade(top, -32), stroke:'rgba(148,163,184,.45)' });
+  }
+  function planter(gx, gy, z) {
+    addBox(gx, gy, 0.55, 0.55, 3.2, '#f8fafc', z);
+    add({ type:'foliage', gx: gx + 0.27, gy: gy + 0.27, z: (z || 0) + 3.2 });
+  }
+  function pendant(gx, gy, z) { add({ type:'pendant', gx, gy, z }); }
+  function chair(gx, gy, z, accent, flip) {
+    add({ type:'chair', gx, gy, z: z || 0, accent: accent || COL.sage, flip: !!flip });
+  }
+  function workstation(gx, gy, z, accent, flip) {
+    const zz = z || 0;
+    addBox(gx + 0.15, gy + 0.15, 0.12, 0.8, 6, '#cbd5e1', zz);
+    addBox(gx + 1.35, gy + 0.15, 0.12, 0.8, 6, '#cbd5e1', zz);
+    addBox(gx, gy, 1.64, 1.1, 1.1, '#ffffff', zz + 6, '#e2e8f0', '#cbd5e1');
+    add({ type:'monitor', gx: gx + 0.35, gy: gy + 0.18, z: zz + 7.2, seed: gx * 3 });
+    add({ type:'monitor', gx: gx + 0.95, gy: gy + 0.18, z: zz + 7.2, seed: gx * 5 });
+    add({ type:'laptop', gx: gx + 0.7, gy: gy + 0.55, z: zz + 7.1 });
+    const cx = gx + 0.55, cy = flip ? gy - 0.15 : gy + 1.15;
+    chair(cx, cy, zz, accent, flip);
+    return { x: cx + 0.2, y: cy + 0.2, z: zz };
+  }
+  function sofa(gx, gy, w, c1, c2, z, flip) {
+    const zz = z || 0;
+    addBox(gx, gy, w, 0.9, 3.4, c1, zz);
+    addBox(gx, flip ? gy : gy + 0.65, w, 0.28, 6.5, c2, zz);
+  }
+  function wallTV(gx, gy, z) { add({ type:'tv', gx, gy, z }); }
+  function whiteboard(gx, gy, z) { add({ type:'board', gx, gy, z }); }
+  function glassPartition(gx, gy0, gy1, z) { add({ type:'glass', gx, gy0, gy1, z: z || 0 }); }
+  function autoclave(gx, gy, z, i) { add({ type:'clave', gx, gy, z: z || 0, i }); }
+  function laserTower(gx, gy, z, id) { add({ type:'laser', id, gx, gy, z: z || 0, hx: gx, hy: gy }); }
+  function treatmentBed(gx, gy, z) {
+    addBox(gx, gy, 1.7, 0.72, 3.2, '#ffffff', z || 0, '#e2e8f0', '#cbd5e1');
+    addBox(gx + 0.15, gy + 0.12, 0.42, 0.42, 1.4, COL.blush, (z || 0) + 3.2);
+  }
+  function sanitiser(gx, gy, z) {
+    addBox(gx, gy, 0.28, 0.28, 4.5, '#ffffff', z || 0, '#e2e8f0', COL.mint);
+  }
+  function logoMark(x, y, r) {
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.strokeStyle = COL.rose; ctx.lineWidth = Math.max(1, r * 0.18);
+    ctx.beginPath(); ctx.arc(x, y + r * 0.15, r * 0.48, Math.PI * 1.05, Math.PI * 1.95); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, y - r * 0.05, r * 0.42, Math.PI * 0.1, Math.PI * 0.9); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, y - r * 0.35); ctx.lineTo(x, y + r * 0.4); ctx.stroke();
+  }
+
+  function furnish() {
+    const seats = {};
+    STAFF.forEach((s) => { seats[s.handle] = { x: s.home[0], y: s.home[1], z: s.home[2] }; });
+    workstation(13.6, 12.2, 0, COL.blush, false);
+    workstation(16.8, 12.2, 0, COL.mint, false);
+    seats['@reception_mia'] = { x: 14.3, y: 13.5, z: 0 };
+    seats['@reception_jun'] = { x: 17.5, y: 13.5, z: 0 };
+    addBox(14.2, 11.55, 6.2, 0.7, 7.2, '#ffffff', 0);
+    addBox(22.6, 13.4, 0.4, 2.2, 8, '#ffffff', 0);
+    for (let i = 0; i < 6; i++) addBox(22.75, 13.55 + (i % 3) * 0.55, 0.18, 0.18, 2.2 + (i % 2), ['#F4A7B9','#7ED3B2','#8EC5FF','#F2C14E','#B8A1F2','#ffffff'][i], 8);
+    sofa(13.2, 16.2, 2.4, COL.blush, '#fff', 0, false);
+    sofa(16.4, 16.2, 2.2, COL.mint, '#fff', 0, false);
+    sofa(19.2, 16.3, 2.2, COL.sky, '#fff', 0, false);
+    addBox(15.2, 15.3, 0.7, 0.7, 2.4, '#ffffff', 0);
+    addBox(18.2, 15.3, 0.7, 0.7, 2.4, '#ffffff', 0);
+    wallTV(20.4, 10.45, 16);
+    add({ type:'queue', gx: 12.4, gy: 10.45, z: 18 });
+    add({ type:'clock', gx: 17.2, gy: 10.4, z: 22 });
+    add({ type:'logo', gx: 15.2, gy: 10.35, z: 24 });
+    addBox(24.8, 16.6, 0.8, 0.8, 7, '#ffffff', 0, '#e2e8f0', COL.sky);
+    for (let i = 0; i < 4; i++) pendant(14 + i * 2.3, 14.5, 0);
+    planter(12.2, 17.2, 0); planter(25.4, 17.2, 0);
+    sanitiser(12.2, 17.8, 0); sanitiser(26.2, 17.6, 0);
+
+    workstation(24.8, 3.4, 0, COL.sage, false);
+    workstation(26.4, 6.2, 0, COL.lav, false);
+    seats['@dr_yeyen'] = { x: 25.5, y: 4.7, z: 0 };
+    seats['@dr_intan'] = { x: 27.1, y: 7.5, z: 0 };
+    addBox(25.2, 5.6, 0.7, 0.7, 3, COL.mint, 0);
+    addBox(27.4, 5.6, 0.7, 0.7, 3, COL.sky, 0);
+    whiteboard(24.4, 2.3, 14);
+    add({ type:'camera', gx: 27.6, gy: 3.2, z: 0 });
+    planter(24.5, 8.4, 0);
+    workstation(30.8, 3.4, 0, COL.mint, false);
+    seats['@dr_jessica'] = { x: 31.5, y: 4.7, z: 0 };
+    addBox(31.2, 5.8, 0.7, 0.7, 3, '#ffffff', 0);
+    whiteboard(30.3, 2.3, 14);
+    glassPartition(29.35, 2.4, 9.2, 0);
+    pendant(26.2, 4.2, 0); pendant(32.2, 4.2, 0);
+    sanitiser(24.4, 9.2, 0); sanitiser(33.6, 9.2, 0);
+
+    addBox(2.5, 11.2, 3.2, 0.7, 7, '#ffffff', 0);
+    addBox(2.6, 12.2, 0.5, 0.5, 8, '#e0f2fe', 0, '#cbd5e1', COL.mint);
+    addBox(3.3, 12.1, 0.7, 0.55, 5, '#f8fafc', 0);
+    addBox(5.4, 11.3, 1.6, 0.6, 9, '#ffffff', 0, '#e2e8f0', COL.sky);
+    addBox(4.2, 13.6, 5.6, 0.8, 6.5, '#ffffff', 0);
+    for (let i = 0; i < 5; i++) chair(4.5 + i, 14.55, 0, [COL.blush, COL.mint, COL.sky, COL.gold, COL.lav][i], false);
+    addBox(3.2, 16.1, 4.4, 1.15, 6, '#ffffff', 0);
+    for (let i = 0; i < 4; i++) { chair(3.4 + i, 15.85, 0, COL.sage, true); chair(3.4 + i, 17.35, 0, COL.blush, false); }
+    addBox(7.3, 11.4, 0.7, 0.6, 10, '#ffffff', 0, '#e2e8f0', COL.sky);
+    addBox(2.6, 17.4, 2.2, 0.4, 6, '#ffffff', 0);
+    for (let i = 0; i < 3; i++) chair(3 + i * 0.7, 17.9, 0, COL.gold, false);
+    for (let i = 0; i < 6; i++) pendant(3.2 + (i % 3) * 1.8, 12.8 + Math.floor(i / 3) * 3.2, 0);
+    planter(8.4, 17.4, 0);
+    sanitiser(8.6, 18.2, 0);
+
+    const bays = [[24.2,20.4],[30.2,20.4],[24.2,24.4],[30.2,24.4]];
+    bays.forEach(([x, y], i) => {
+      treatmentBed(x, y, 0);
+      addBox(x + 1.8, y + 0.1, 0.45, 0.7, 4, '#ffffff', 0);
+      chair(x + 1.15, y + 1.15, 0, COL.lav, false);
+      if (i !== 3) laserTower(x + 2.3, y + 0.3, 0, 'bay' + i);
+      pendant(x + 1, y + 0.4, 0);
+    });
+    laserTower(31.2, 25.2, 0, 'kai');
+    glassPartition(29.0, 19.6, 23.2, 0);
+    glassPartition(29.0, 24.2, 27.4, 0);
+    addBox(33.4, 20.2, 0.7, 1.4, 8, '#ffffff', 0);
+    addBox(33.5, 22.4, 0.6, 0.5, 5, '#ffffff', 0, COL.mint, '#e2e8f0');
+    addBox(33.4, 25.4, 0.8, 1.2, 6, '#f8fafc', 0);
+    addBox(24.2, 27.2, 1.2, 0.7, 4, '#ffffff', 0);
+    sanitiser(23.4, 27.2, 0);
+
+    for (let i = 0; i < 6; i++) autoclave(12.2 + i * 1.15, 21.5, 0, i);
+    addBox(12.2, 23.2, 4.2, 0.7, 6, '#f8fafc', 0, '#e2e8f0', '#cbd5e1');
+    workstation(12.4, 24.4, 0, COL.sky, false);
+    seats['@steri_omar'] = { x: 13.1, y: 25.7, z: 0 };
+    addBox(17.2, 24.6, 1.4, 0.6, 7, '#ffffff', 0, '#e2e8f0', COL.sky);
+    addBox(19.2, 24.8, 0.9, 0.7, 11, '#ffffff', 0, '#dbeafe', COL.mint);
+    add({ type:'thermo', gx: 19.5, gy: 24.9, z: 12 });
+    glassPartition(18.4, 21.5, 26.6, 0);
+    add({ type:'bars', gx: 15.5, gy: 21.35, z: 16 });
+    addBox(12.3, 26.4, 1.1, 0.5, 5, '#ffffff', 0, COL.sky, '#e2e8f0');
+    sanitiser(20.6, 26.6, 0);
+    planter(20.4, 26.2, 0);
+
+    wallTV(30.2, 11.3, 14);
+    sofa(29.2, 14.4, 2.6, COL.blush, '#fff', 0, true);
+    addBox(30.2, 13.5, 0.9, 0.7, 2.6, '#ffffff', 0);
+    addBox(33.2, 12.2, 0.8, 0.6, 7, COL.sky, 0);
+    addBox(34.2, 12.2, 0.8, 0.6, 7, COL.gold, 0);
+    add({ type:'play', gx: 33.4, gy: 12.35, z: 8, seed: 1 });
+    add({ type:'play', gx: 34.4, gy: 12.35, z: 8, seed: 2 });
+    addBox(32.6, 15.8, 1.3, 0.8, 4, '#ffffff', 0, COL.mint, COL.gold);
+    addBox(29.4, 16.4, 0.7, 0.7, 2.2, COL.lav, 0);
+    addBox(31.2, 16.5, 0.7, 0.7, 2.2, COL.sky, 0);
+    addBox(34.2, 15.2, 0.45, 1.4, 6, '#ffffff', 0);
+    pendant(31, 13.2, 0); pendant(33.5, 15, 0);
+    planter(34.6, 16.6, 0);
+
+    for (let i = 0; i < 6; i++) addBox(2.5 + (i % 3) * 0.7, 20.6 + Math.floor(i / 3) * 0.7, 0.55, 0.5, 8, [COL.mint, COL.blush, COL.sky, COL.gold, COL.lav, '#fff'][i], 0);
+    addBox(2.6, 22.6, 2.2, 0.45, 3, '#ffffff', 0);
+    add({ type:'mirror', gx: 6.4, gy: 20.5, z: 8 });
+    sofa(5.4, 23.4, 1.8, COL.blush, '#fff', 0, false);
+    addBox(5.6, 24.6, 0.7, 0.55, 2.4, '#ffffff', 0);
+    addBox(7.4, 24.8, 0.5, 1.2, 6, '#ffffff', 0);
+    planter(7.6, 26.4, 0);
+    sanitiser(2.6, 26.6, 0);
+
+    addBox(3.2, 3.2, 6.4, 1.15, 6, '#ffffff', 92);
+    for (let i = 0; i < 5; i++) chair(3.6 + i, 4.5, 92, i % 2 ? COL.sky : '#fff', false);
+    wallTV(6.2, 1.3, 108);
+    planter(2.6, 6.4, 92); planter(10.2, 6.4, 92);
+    workstation(3.4, 5.2, 92, COL.gold, false);
+    seats['@finance_ada'] = { x: 4.1, y: 6.5, z: 92 };
+    workstation(6.4, 5.2, 92, COL.lav, false);
+    workstation(8.6, 5.2, 92, COL.blush, false);
+    seats['@brand_leo'] = { x: 7.1, y: 6.5, z: 92 };
+    seats['@social_zoe'] = { x: 9.3, y: 6.5, z: 92 };
+
+    add({ type:'videowall', gx: 13.2, gy: 1.25, z: 108 });
+    for (let i = 0; i < 5; i++) {
+      const accent = i < 3 ? [COL.sage, COL.gold, COL.sky][i] : '#cbd5e1';
+      workstation(13.2 + i * 1.85, 2.5, 92, accent, false);
+    }
+    seats['@ops_lucas'] = { x: 13.9, y: 3.8, z: 92 };
+    seats['@ops_sara'] = { x: 15.75, y: 3.8, z: 92 };
+    seats['@ops_wei'] = { x: 17.6, y: 3.8, z: 92 };
+    addBox(13.4, 5.3, 2.2, 0.8, 3, COL.gold, 92);
+    addBox(16.4, 5.4, 2.2, 0.8, 3, '#ffffff', 92);
+    addBox(15.2, 5.15, 0.7, 0.55, 2.2, '#ffffff', 92);
+    planter(21.4, 6.2, 92); planter(12.5, 6.3, 92);
+    for (let i = 0; i < 4; i++) pendant(14 + i * 1.8, 3.2, 92);
+    add({ type:'stairs', gx: 10.6, gy: 5.8, z: 0 });
+
+    STAFF.forEach((s) => {
+      const seat = seats[s.handle] || { x: s.home[0], y: s.home[1], z: s.home[2] };
+      s.home = [seat.x, seat.y, seat.z];
+    });
+    PROPS.sort((a, b) => a.sort - b.sort);
+  }
+
+  function stairCell(x, y) { return x >= 11 && x <= 12 && y >= 6 && y <= 8; }
+  function walkable(x, y, z) {
+    if (DOORS.some((d) => d[0] === x && d[1] === y) && z === 0) return true;
+    if (z >= 40) {
+      if (stairCell(x, y)) return true;
+      return ROOMS.some((r) => r.z === 92 && r.shell && x > r.gx && x < r.gx + r.gw - 1 && y > r.gy && y < r.gy + r.gh - 1);
+    }
+    if (x < 1 || y < 1 || x > 36 || y > 28) return false;
+    if (x === 29 && y >= 3 && y <= 8 && y !== 6) return false;
+    for (const r of ROOMS) {
+      if (!r.shell || r.z) continue;
+      if (y === r.gy && x >= r.gx && x < r.gx + r.gw) return false;
+      if (x === r.gx && y >= r.gy && y < r.gy + r.gh) return false;
+    }
+    return true;
+  }
+  function nearest(x, y, z) {
+    const zf = z >= 40 ? 92 : 0;
+    let best = null, bd = 99;
+    for (let r = 0; r <= 5; r++) {
+      for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+        const ix = Math.round(x + dx), iy = Math.round(y + dy);
+        if (!walkable(ix, iy, zf)) continue;
+        const d = Math.abs(dx) + Math.abs(dy);
+        if (d < bd) { bd = d; best = { x: ix, y: iy, z: zf }; }
+      }
+      if (best) return best;
+    }
+    return { x: Math.round(x), y: Math.round(y), z: zf };
+  }
+  function astar(sx, sy, sz, ex, ey, ez) {
+    const start = nearest(sx, sy, sz), goal = nearest(ex, ey, ez);
+    const key = (n) => n.x + ',' + n.y + ',' + n.z;
+    const h = (n) => Math.abs(n.x - goal.x) + Math.abs(n.y - goal.y) + (n.z !== goal.z ? 6 : 0);
+    const open = [start];
+    const g = { [key(start)]: 0 };
+    const prev = {};
+    const seen = new Set();
+    let guard = 0;
+    while (open.length && guard++ < 5000) {
+      open.sort((a, b) => (g[key(a)] + h(a)) - (g[key(b)] + h(b)));
+      const cur = open.shift();
+      const ck = key(cur);
+      if (seen.has(ck)) continue;
+      seen.add(ck);
+      if (cur.x === goal.x && cur.y === goal.y && cur.z === goal.z) {
+        const path = [cur];
+        let k = ck;
+        while (prev[k]) { path.push(prev[k]); k = key(prev[k]); }
+        path.reverse();
+        path.push({ x: ex, y: ey, z: ez >= 40 ? 92 : 0 });
+        return path;
+      }
+      const neigh = [[1,0],[ -1,0],[0,1],[0,-1]].map(([dx, dy]) => ({ x: cur.x + dx, y: cur.y + dy, z: cur.z }))
+        .filter((n) => walkable(n.x, n.y, n.z));
+      if (stairCell(cur.x, cur.y)) neigh.push({ x: cur.x, y: cur.y, z: cur.z === 0 ? 92 : 0 });
+      for (const n of neigh) {
+        const nk = key(n);
+        const ng = g[ck] + (n.z !== cur.z ? 2 : 1);
+        if (g[nk] != null && ng >= g[nk]) continue;
+        g[nk] = ng; prev[nk] = cur; open.push(n);
+      }
+    }
+    return [];
+  }
+  function roomAt(gx, gy, z) {
+    const zf = z >= 40 ? 92 : 0;
+    let hit = null;
+    for (const r of ROOMS) {
+      if ((r.z || 0) !== zf) continue;
+      if (gx >= r.gx && gx < r.gx + r.gw && gy >= r.gy && gy < r.gy + r.gh) hit = r;
+    }
+    if (zf === 0 && stairCell(Math.round(gx), Math.round(gy))) return { short:'Stairs', name:'Staircase' };
+    return hit || { short: zf ? '2F hall' : 'Corridor', name: 'Corridor' };
+  }
+  function log(a, text) {
+    const stamp = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    a.logs.unshift(stamp + '  ' + text);
+    a.logs.length = Math.min(20, a.logs.length);
+  }
+  function goTo(a, x, y, z, after) {
+    const path = astar(a.gx, a.gy, a.z, x, y, z);
+    a.after = after;
+    a.dest = { x, y, z };
+    if (!path.length) {
+      a.path = [];
+      a.state = 'AT_STATION';
+      a.say = 'Route blocked';
+      a.sayUntil = simT + 2;
+      return;
+    }
+    a.path = path;
+    a.state = 'WALKING';
+  }
+  function goHome(a) {
+    a.rush = false;
+    goTo(a, a.home[0], a.home[1], a.home[2], 'HOME');
+  }
+  function arrive(a) {
+    if (a.after === 'REMOVE') { a.dead = true; return; }
+    if (a.after === 'HOME') {
+      a.state = 'AT_STATION';
+      a.gx = a.home[0]; a.gy = a.home[1]; a.z = a.home[2];
+      a.rush = false; a.laserOn = false;
+      a.nextBreak = simT + 25 + Math.random() * 35;
+      return;
+    }
+    a.state = 'HOLD';
+    if (a.after === 'BREAK') a.holdUntil = a.breakUntil;
+    else if (a.after === 'PINK') a.holdUntil = pinkUntil;
+    else if (a.after === 'PATROL') a.holdUntil = simT + 2.5;
+    else if (a.after === 'WHEEL') a.holdUntil = simT + 6;
+    else if (a.after === 'STEP') a.holdUntil = simT + (a.stepHold || 6);
+    else a.holdUntil = simT + 2;
+  }
+  function makeActor(src, guest) {
+    const a = {
+      ...src,
+      gx: src.home[0], gy: src.home[1], z: src.home[2],
+      state: 'AT_STATION', path: [], phase: Math.random() * 6,
+      nextBreak: 8 + Math.random() * 20, say: '', sayUntil: 0,
+      logs: [], busy: false, rush: false, laserOn: false, guest: !!guest,
+      nextWheel: 20 + Math.random() * 20, pi: 0, nextPatrol: 6
+    };
+    log(a, 'On station in ' + src.room);
+    return a;
+  }
+  function spawnGuest() {
+    const n = actors.filter((a) => a.guest).length + 1;
+    const g = makeActor({
+      handle: '@guest_' + n, name: 'Guest ' + n, role: 'Visiting patient', group: 'Guest', roleKey: 'reception',
+      home: [18, 18.2, 0], room: 'R-101', uniform: '#e2e8f0', hair: '#64748b', skin: '#f3d2b8', acc: 'none',
+      lay: 'A visiting patient moving from the lounge to consultation, then a treatment bay.',
+      tech: ['Scripted visit', 'Not a staff playbook'],
+      quotes: ['I have a booking.', 'Thank you.']
+    }, true);
+    g.gx = 18; g.gy = 18.4; g.z = 0;
+    g.script = [
+      { x: 16.2, y: 16.6, z: 0, hold: 7, say: 'Taking a seat' },
+      { x: 27.2, y: 7.4, z: 0, hold: 8, say: 'Called to consultation' },
+      { x: 27.4, y: 22.2, z: 0, hold: 8, say: 'In the treatment bay' },
+      { x: 18.2, y: 18.5, z: 0, hold: 0.2, say: 'Leaving', remove: true }
+    ];
+    g.si = 0;
+    const step = g.script[0];
+    g.say = step.say; g.sayUntil = simT + 3; g.stepHold = step.hold;
+    goTo(g, step.x, step.y, step.z, step.remove ? 'REMOVE' : 'STEP');
+    actors.push(g);
+  }
+
+  function updateActor(a, dt) {
+    if (a.dead) return;
+    if (a.state === 'WALKING') {
+      if (!a.path.length) { arrive(a); return; }
+      const n = a.path[0];
+      const spd = 2.15 * (a.rush ? 1.85 : 1);
+      if (Math.abs((a.z || 0) - n.z) > 1.5) {
+        a.z += Math.sign(n.z - a.z) * 70 * dt;
+        return;
+      }
+      a.z = n.z;
+      const dx = n.x - a.gx, dy = n.y - a.gy, dist = Math.hypot(dx, dy) || 0.0001;
+      if (dist < 0.07) { a.gx = n.x; a.gy = n.y; a.path.shift(); return; }
+      const step = Math.min(dist, spd * dt);
+      a.gx += dx / dist * step; a.gy += dy / dist * step;
+      return;
+    }
+    if (a.state === 'HOLD' && simT >= (a.holdUntil || 0)) {
+      if (a.after === 'PATROL') { a.state = 'AT_STATION'; a.nextPatrol = simT + 1; return; }
+      if (a.after === 'WHEEL') { a.laserOn = false; goHome(a); return; }
+      if (a.after === 'BREAK' || a.after === 'PINK') { goHome(a); return; }
+      if (a.guest) {
+        a.si = (a.si || 0) + 1;
+        const step = a.script[a.si];
+        if (!step) { a.dead = true; return; }
+        a.say = step.say; a.sayUntil = simT + 3; a.stepHold = step.hold;
+        goTo(a, step.x, step.y, step.z, step.remove ? 'REMOVE' : 'STEP');
+      }
+      return;
+    }
+    if (a.guest || a.busy) return;
+    if (a.handle === '@facilities_ben' && a.state === 'AT_STATION' && simT > a.nextPatrol && simT > pinkUntil) {
+      a.pi = (a.pi + 1) % PATROL.length;
+      const p = PATROL[a.pi];
+      a.say = 'On my round'; a.sayUntil = simT + 2.4;
+      goTo(a, p[0], p[1], p[2], 'PATROL');
+      return;
+    }
+    if (a.handle === '@nurse_kai' && a.state === 'AT_STATION' && simT > a.nextWheel && simT > pinkUntil) {
+      a.nextWheel = simT + 48;
+      a.laserOn = true;
+      a.say = 'Wheeling the tower'; a.sayUntil = simT + 3;
+      const toBay = a.gx < 29 ? [31.5, 21.6, 0] : [26.4, 25.6, 0];
+      goTo(a, toBay[0], toBay[1], 0, 'WHEEL');
+      return;
+    }
+    if (a.state === 'AT_STATION' && simT > a.nextBreak && simT > pinkUntil && a.handle !== '@facilities_ben') {
+      const spot = BREAKS[Math.floor(Math.random() * BREAKS.length)];
+      a.say = spot.say; a.sayUntil = simT + 3.2;
+      a.breakUntil = simT + 9 + Math.random() * 6;
+      log(a, spot.say);
+      goTo(a, spot.x, spot.y, spot.z, 'BREAK');
+      return;
+    }
+    if (a.state === 'AT_STATION' && Math.random() < dt * 0.08) {
+      const q = a.quotes[Math.floor(Math.random() * a.quotes.length)];
+      a.say = q; a.sayUntil = simT + 2.8;
+    }
+  }
+
+  function drawChair(p) {
+    const z = p.z, accent = p.accent;
+    box(p.gx, p.gy, 0.46, 0.46, 0.35, '#cbd5e1', '#94a3b8', '#64748b', null, z);
+    box(p.gx + 0.16, p.gy + 0.16, 0.14, 0.14, 2.4, '#e2e8f0', '#cbd5e1', '#94a3b8', null, z + 0.3);
+    box(p.gx - 0.02, p.gy - 0.02, 0.5, 0.5, 0.7, '#f8fafc', '#e2e8f0', '#cbd5e1', null, z + 2.6);
+    const by = p.flip ? p.gy - 0.08 : p.gy + 0.42;
+    box(p.gx, by, 0.46, 0.12, 3.4, accent, shade(accent, -20), shade(accent, -35), null, z + 3);
+    box(p.gx - 0.08, p.gy + 0.05, 0.08, 0.32, 1.4, accent, shade(accent, -15), shade(accent, -15), null, z + 3);
+    box(p.gx + 0.46, p.gy + 0.05, 0.08, 0.32, 1.4, accent, shade(accent, -15), shade(accent, -15), null, z + 3);
+  }
+  function drawProp(p, t) {
+    if (p.type === 'box') { box(p.gx, p.gy, p.gw, p.gh, p.h, p.top, p.left, p.right, p.stroke, p.z); return; }
+    if (p.type === 'chair') { drawChair(p); return; }
+    if (p.type === 'foliage') {
+      const o = iso(p.gx, p.gy, p.z);
+      ctx.fillStyle = '#5FB382';
+      ctx.beginPath(); ctx.arc(o.x, o.y, 11 * view.zoom, 0, 7); ctx.fill();
+      ctx.fillStyle = '#7ED3B2';
+      ctx.beginPath(); ctx.arc(o.x - 4 * view.zoom, o.y + 2 * view.zoom, 7 * view.zoom, 0, 7); ctx.fill();
+      return;
+    }
+    if (p.type === 'pendant') {
+      const o = iso(p.gx, p.gy, (p.z || 0) + 34);
+      ctx.strokeStyle = '#cbd5e1'; ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(o.x, o.y + 18 * view.zoom); ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(o.x, o.y + 22 * view.zoom, 8 * view.zoom, 4 * view.zoom, 0, 0, 7); ctx.fill();
+      return;
+    }
+    if (p.type === 'monitor' || p.type === 'laptop' || p.type === 'play') {
+      const o = iso(p.gx, p.gy, p.z);
+      const w = (p.type === 'laptop' ? 16 : 22) * view.zoom, h = (p.type === 'laptop' ? 10 : 14) * view.zoom;
+      ctx.fillStyle = '#1e293b'; round(o.x, o.y, w + 4, h + 4, 3);
+      ctx.fillStyle = '#e0f2fe'; round(o.x + 2, o.y + 2, w, h, 2);
+      const colors = ['#5FB382', '#F4A7B9', '#8EC5FF', '#F2C14E'];
+      colors.forEach((c, i) => {
+        ctx.fillStyle = c;
+        const ww = (3 + ((Math.sin(t * 2 + (p.seed || 0) + i) + 1) * 2)) * view.zoom;
+        ctx.fillRect(o.x + 4 + i * 4 * view.zoom, o.y + 4, ww, 4 * view.zoom);
+      });
+      return;
+    }
+    if (p.type === 'tv') {
+      const o = iso(p.gx, p.gy, p.z);
+      ctx.fillStyle = '#334155'; round(o.x, o.y, 70 * view.zoom, 40 * view.zoom, 4);
+      ctx.fillStyle = '#f8fafc'; round(o.x + 4, o.y + 4, 62 * view.zoom, 32 * view.zoom, 3);
+      ctx.fillStyle = '#1e293b'; ctx.font = Math.max(9, 11 * view.zoom) + 'px sans-serif';
+      const label = TV_MENU[Math.floor(t / 4) % TV_MENU.length];
+      ctx.fillText(label, o.x + 8, o.y + 22 * view.zoom);
+      return;
+    }
+    if (p.type === 'queue') {
+      const o = iso(p.gx, p.gy, p.z);
+      ctx.fillStyle = '#0f172a'; round(o.x, o.y, 54 * view.zoom, 28 * view.zoom, 4);
+      ctx.fillStyle = COL.gold; ctx.font = '700 ' + Math.max(10, 13 * view.zoom) + 'px sans-serif';
+      const num = 'A' + String(120 + Math.floor(t / 7) % 80).padStart(3, '0');
+      ctx.fillText(num, o.x + 8, o.y + 18 * view.zoom);
+      return;
+    }
+    if (p.type === 'clock') {
+      const o = iso(p.gx, p.gy, p.z);
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(o.x, o.y, 12 * view.zoom, 0, 7); ctx.fill();
+      ctx.strokeStyle = COL.sage; ctx.stroke();
+      const d = new Date();
+      const ang = ((d.getHours() % 12) / 12) * Math.PI * 2 - Math.PI / 2;
+      ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(o.x + Math.cos(ang) * 6 * view.zoom, o.y + Math.sin(ang) * 6 * view.zoom); ctx.stroke();
+      return;
+    }
+    if (p.type === 'logo') { const o = iso(p.gx, p.gy, p.z); logoMark(o.x, o.y, 12 * view.zoom); return; }
+    if (p.type === 'glass') {
+      ctx.save(); ctx.globalAlpha *= 0.38;
+      box(p.gx, p.gy0, 0.12, p.gy1 - p.gy0, 28, 'rgba(255,255,255,.8)', 'rgba(142,197,255,.5)', 'rgba(255,255,255,.7)', null, p.z);
+      ctx.restore();
+      box(p.gx, p.gy0 + (p.gy1 - p.gy0) * 0.35, 0.14, (p.gy1 - p.gy0) * 0.18, 6, 'rgba(248,250,252,.95)', '#e2e8f0', '#cbd5e1', null, p.z + 12);
+      return;
+    }
+    if (p.type === 'clave') {
+      const blink = (Math.floor(t * 2 + p.i) % 3);
+      addGlowBox(p.gx, p.gy, blink);
+      return;
+    }
+    if (p.type === 'laser') {
+      let x = p.hx, y = p.hy;
+      if (p.id === 'kai') {
+        const kai = actors.find((s) => s.handle === '@nurse_kai');
+        if (kai && kai.laserOn) { x = kai.gx; y = kai.gy; }
+      }
+      box(x, y, 0.42, 0.42, 9, '#f8fafc', '#e2e8f0', '#cbd5e1', null, p.z);
+      const o = iso(x + 0.2, y + 0.1, p.z + 7);
+      ctx.fillStyle = '#0ea5e9'; round(o.x, o.y, 10 * view.zoom, 6 * view.zoom, 2);
+      ctx.strokeStyle = '#94a3b8'; ctx.beginPath();
+      const arm = iso(x + 0.8, y - 0.2, p.z + 8);
+      ctx.moveTo(o.x, o.y); ctx.lineTo(arm.x, arm.y); ctx.stroke();
+      return;
+    }
+    if (p.type === 'thermo' || p.type === 'bars' || p.type === 'board' || p.type === 'mirror' || p.type === 'camera' || p.type === 'videowall') {
+      const o = iso(p.gx, p.gy, p.z);
+      const pulse = p.type === 'videowall' && simT < pinkUntil;
+      ctx.fillStyle = pulse ? '#fecdd3' : '#1e293b';
+      const w = (p.type === 'videowall' ? 120 : p.type === 'board' || p.type === 'mirror' ? 36 : 48) * view.zoom;
+      const h = (p.type === 'videowall' ? 52 : 26) * view.zoom;
+      round(o.x, o.y, w, h, 4);
+      ctx.fillStyle = pulse ? '#fff' : '#f8fafc';
+      round(o.x + 3, o.y + 3, w - 6, h - 6, 3);
+      ctx.fillStyle = '#334155'; ctx.font = Math.max(8, 10 * view.zoom) + 'px sans-serif';
+      const caption = p.type === 'thermo' ? '4.2 C' : p.type === 'bars' ? 'Utilisation' : p.type === 'videowall' ? (pulse ? 'CODE PINK' : 'All rooms on schedule') : p.type === 'camera' ? 'Skin cam' : p.type === 'mirror' ? '' : 'Plan';
+      if (caption) ctx.fillText(caption, o.x + 6, o.y + h * 0.62);
+      if (p.type === 'bars' || p.type === 'videowall') {
+        for (let i = 0; i < 4; i++) {
+          ctx.fillStyle = [COL.sage, COL.gold, COL.sky, COL.rose][i];
+          ctx.fillRect(o.x + 8 + i * 12 * view.zoom, o.y + h - 10 * view.zoom, 8 * view.zoom, -(8 + Math.sin(t + i) * 4) * view.zoom);
+        }
+      }
+      return;
+    }
+    if (p.type === 'stairs') {
+      for (let i = 0; i < 8; i++) box(10.7, 6.0 + i * 0.35, 1.5, 0.32, 1 + i * 1.2, '#ffffff', '#e2e8f0', '#cbd5e1', null, i * 11);
+      return;
+    }
+  }
+  function addGlowBox(gx, gy, blink) {
+    box(gx, gy, 0.85, 0.55, 8, '#ffffff', '#e2e8f0', '#cbd5e1', null, 0);
+    const o = iso(gx + 0.2, gy + 0.15, 6.5);
+    ctx.fillStyle = 'rgba(186,230,253,.8)'; round(o.x, o.y, 12 * view.zoom, 16 * view.zoom, 2);
+    ctx.fillStyle = blink === 0 ? COL.sage : blink === 1 ? COL.sky : COL.gold;
+    ctx.beginPath(); ctx.arc(o.x + 6 * view.zoom, o.y + 4 * view.zoom, 2.2 * view.zoom, 0, 7); ctx.fill();
+  }
+  function round(x, y, w, h, r) {
+    ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fill();
+  }
+  const TAG = {
+    'Front of House': '#F4A7B9',
+    Medical: '#3f7d68',
+    'Clinical Support': '#7eb6e8',
+    Operations: '#e7c56a',
+    Marketing: '#c4b0ef',
+    Facilities: '#b7c4bc',
+    Wellness: '#8ed0b4',
+    Guest: '#e7e1d6'
+  };
+  function drawSim(s, t) {
+    const walking = s.state === 'WALKING';
+    const bob = walking ? Math.abs(Math.sin(t * (s.rush ? 16 : 9) + s.phase)) * 2.4 : Math.sin(t * 1.6 + s.phase) * 0.6;
+    const step = walking ? Math.sin(t * (s.rush ? 16 : 9) + s.phase) : 0;
+    const p = iso(s.gx, s.gy, s.z);
+    const sc = Math.max(0.75, view.zoom);
+    const y = p.y - bob;
+    ctx.fillStyle = s.vip ? 'rgba(196,162,101,.45)' : 'rgba(80,70,50,.16)';
+    ctx.beginPath(); ctx.ellipse(p.x, p.y + 1, 9 * sc, 4.2 * sc, 0, 0, 7); ctx.fill();
+    if (s === selected || s.vip) {
+      ctx.strokeStyle = s.vip ? '#C4A265' : '#3f7d68';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.ellipse(p.x, p.y + 1, 11 * sc, 5 * sc, 0, 0, 7); ctx.stroke();
+    }
+    ctx.fillStyle = '#5c6570';
+    round(p.x - 4.2 * sc + step * 2.4 * sc, y - 7 * sc, 3 * sc, 7 * sc, 1.4 * sc);
+    round(p.x + 1.2 * sc - step * 2.4 * sc, y - 7 * sc, 3 * sc, 7 * sc, 1.4 * sc);
+    ctx.fillStyle = shade(s.uniform, -28);
+    round(p.x - 5.2 * sc - step * 1.5 * sc, y - 14 * sc, 3 * sc, 7 * sc, 1.4 * sc);
+    round(p.x + 2.4 * sc + step * 1.5 * sc, y - 14 * sc, 3 * sc, 7 * sc, 1.4 * sc);
+    ctx.fillStyle = s.uniform;
+    ctx.strokeStyle = 'rgba(40,48,44,.28)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(p.x - 6.2 * sc, y - 18 * sc, 12.4 * sc, 12 * sc, 3.5 * sc); ctx.fill(); ctx.stroke();
+    logoMark(p.x + 2.2 * sc, y - 12.2 * sc, 2.3 * sc);
+    ctx.fillStyle = s.skin;
+    ctx.beginPath(); ctx.arc(p.x, y - 24 * sc, 6.1 * sc, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = s.hair;
+    ctx.beginPath(); ctx.arc(p.x, y - 26.2 * sc, 6.3 * sc, Math.PI * 1.05, Math.PI * 1.95); ctx.fill();
+    ctx.fillStyle = '#243028';
+    ctx.beginPath(); ctx.arc(p.x - 2.1 * sc, y - 24.2 * sc, 0.85 * sc, 0, 7); ctx.arc(p.x + 2.1 * sc, y - 24.2 * sc, 0.85 * sc, 0, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(232,93,117,.35)';
+    ctx.beginPath(); ctx.ellipse(p.x - 3.6 * sc, y - 22.4 * sc, 1.3 * sc, 0.7 * sc, 0, 0, 7); ctx.ellipse(p.x + 3.6 * sc, y - 22.4 * sc, 1.3 * sc, 0.7 * sc, 0, 0, 7); ctx.fill();
+    if (s.acc === 'glasses') { ctx.strokeStyle = '#334155'; ctx.strokeRect(p.x - 4.2 * sc, y - 26 * sc, 8.4 * sc, 3.2 * sc); }
+    if (s.acc === 'headband') { ctx.fillStyle = '#E85D75'; ctx.fillRect(p.x - 6 * sc, y - 27 * sc, 12 * sc, 1.8 * sc); }
+    if (s.acc === 'cap' || s.acc === 'surgical') { ctx.fillStyle = s.acc === 'surgical' ? '#e7f6ef' : '#C4A265'; ctx.beginPath(); ctx.roundRect(p.x - 6.4 * sc, y - 31 * sc, 12.8 * sc, 4 * sc, 2); ctx.fill(); }
+    if (s.acc === 'visor') { ctx.fillStyle = '#8EC5FF'; ctx.fillRect(p.x - 6.5 * sc, y - 25.5 * sc, 13 * sc, 2 * sc); }
+    if (s.acc === 'headphones' || s.acc === 'headset') { ctx.strokeStyle = '#334155'; ctx.strokeRect(p.x - 7.2 * sc, y - 26 * sc, 2.4 * sc, 4 * sc); ctx.strokeRect(p.x + 4.8 * sc, y - 26 * sc, 2.4 * sc, 4 * sc); }
+    if (s.vip) {
+      ctx.fillStyle = '#C4A265';
+      ctx.beginPath();
+      ctx.moveTo(p.x, y - 40 * sc); ctx.lineTo(p.x + 4 * sc, y - 35 * sc); ctx.lineTo(p.x, y - 30 * sc); ctx.lineTo(p.x - 4 * sc, y - 35 * sc); ctx.closePath(); ctx.fill();
+    }
+    const tag = s.vip ? s.name : s.handle;
+    const fill = s.vip ? '#C4A265' : (TAG[s.group] || '#fff');
+    ctx.font = '700 ' + Math.max(10, 11 * Math.min(sc, 1.15)) + 'px sans-serif';
+    const tw = ctx.measureText(tag).width + 12;
+    const tx = p.x - tw / 2;
+    const ty = y - (s.vip ? 52 : 46) * sc;
+    ctx.fillStyle = 'rgba(60,50,30,.12)';
+    round(tx + 1, ty + 2, tw, 16, 8);
+    ctx.fillStyle = fill;
+    ctx.strokeStyle = 'rgba(255,255,255,.85)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(tx, ty, tw, 16, 8); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = s.vip || s.group === 'Medical' || s.group === 'Facilities' ? '#fff' : '#2c3a32';
+    ctx.fillText(tag, tx + 6, ty + 12);
+    if (s.say && t < s.sayUntil) {
+      ctx.font = '12px sans-serif';
+      const bw = Math.min(210, ctx.measureText(s.say).width + 16);
+      const bx = p.x - bw / 2, by = ty - 28;
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = '#e6e0d4';
+      ctx.beginPath(); ctx.roundRect(bx, by, bw, 22, 8); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#3f4a3c';
+      ctx.fillText(s.say, bx + 8, by + 15);
+    }
+  }
+  function drawNameplate(r) {
+    const p = iso(r.gx + 0.7, r.gy + 0.35, (r.z || 0) + (r.label ? 8 : 24));
+    const label = (r.z ? '2F ' : '1F ') + r.short;
+    ctx.font = '700 11px sans-serif';
+    const w = ctx.measureText(label).width + 14;
+    ctx.fillStyle = 'rgba(255,253,248,.95)';
+    ctx.strokeStyle = '#e6e0d4';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(p.x, p.y, w, 16, 4); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = r.wall || '#3f7d68';
+    ctx.fillRect(p.x, p.y, 3, 16);
+    ctx.fillStyle = '#4d564c';
+    ctx.fillText(label, p.x + 8, p.y + 12);
+  }
+  function drawFloorLayer(z, alpha) {
+    ctx.save(); ctx.globalAlpha = alpha;
+    if (z === 0) {
+      floorQuad(1, 1, 35, 28, 0, '#f3ece1', '#e7dfd0');
+      ctx.strokeStyle = COL.mint; ctx.globalAlpha *= 0.8;
+      [[2, 9.4, 33, 0.08],[10.4, 2, 0.08, 26],[22.4, 10, 0.08, 18]].forEach(([x, y, w, h]) => floorQuad(x, y, w, h, 0.2, COL.sage, null));
+      const dots = (simT * 0.35) % 1;
+      for (let i = 0; i < 5; i++) {
+        const o = iso(4 + ((dots + i / 5) % 1) * 28, 9.5, 0.4);
+        ctx.fillStyle = COL.rose; ctx.beginPath(); ctx.arc(o.x, o.y, 2.2, 0, 7); ctx.fill();
+      }
+      ctx.globalAlpha = alpha;
+      [[2.2, 7.8],[10.2, 7.8],[22.6, 7.8]].forEach(([x, y]) => box(x, y, 0.5, 0.5, 120, '#f8fafc', '#e2e8f0', '#cbd5e1', '#94a3b8', 0));
+    }
+    ROOMS.filter((r) => (r.z || 0) === z && r.floor).forEach((r) => floorQuad(r.gx, r.gy, r.gw, r.gh, z + 0.6, '#fffdf8', '#f0e6d4'));
+    if (z === 0) {
+      ROOMS.filter((r) => r.shell && !r.z).forEach((r) => {
+        box(r.gx, r.gy, r.gw, 0.18, 26, '#ffffff', '#f7f4ee', '#e7e1d6', 'rgba(180,170,150,.35)', 0);
+        box(r.gx, r.gy, r.gw, 0.18, 1.4, r.wall, r.wall, shade(r.wall, -12), null, 24.6);
+        box(r.gx, r.gy, 0.18, r.gh, 26, '#ffffff', '#f4f0e8', r.wall, 'rgba(180,170,150,.28)', 0);
+      });
+    } else {
+      ROOMS.filter((r) => r.shell && r.z === 92).forEach((r) => {
+        floorQuad(r.gx, r.gy, r.gw, r.gh, 92, '#fffdf8', '#f0e6d4');
+        box(r.gx, r.gy, r.gw, 0.18, 26, '#ffffff', '#f7f4ee', '#e7e1d6', null, 92);
+        box(r.gx, r.gy, r.gw, 0.18, 1.4, r.wall, r.wall, shade(r.wall, -12), null, 116.6);
+        box(r.gx, r.gy, 0.18, r.gh, 26, '#ffffff', '#f4f0e8', r.wall, null, 92);
+      });
+    }
+    ROOMS.filter((r) => (r.z || 0) === z && (r.shell || r.label)).forEach(drawNameplate);
+    const exit = iso(2.4, 19.2, 20);
+    if (z === 0) {
+      ctx.fillStyle = COL.sage; round(exit.x, exit.y, 18 * view.zoom, 12 * view.zoom, 3);
+      ctx.fillStyle = '#fff'; ctx.font = '9px sans-serif'; ctx.fillText('EXIT', exit.x + 2, exit.y + 9 * view.zoom);
+    }
+    PROPS.forEach((p) => {
+      const pz = p.z >= 40 ? 92 : 0;
+      if (pz !== z) return;
+      drawProp(p, simT);
+    });
+    actors.filter((s) => !s.dead && ((s.z >= 40 ? 92 : 0) === z)).sort((a, b) => (a.gx + a.gy) - (b.gx + b.gy)).forEach((s) => drawSim(s, simT));
+    ctx.restore();
+  }
+
+  function frame() {
+    ctx.clearRect(0, 0, W, H);
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#f7f3ea'); sky.addColorStop(1, '#fbf8f2');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    drawFloorLayer(0, 1);
+    drawFloorLayer(92, showFull ? 1 : 0.18);
+  }
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.floor(W * dpr); canvas.height = Math.floor(H * dpr);
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function focusKey(key) {
+    const f = FOCI[key] || FOCI.full;
+    const zoom = Math.max(0.6, Math.min(2.2, f[3]));
+    view.tz = zoom;
+    view.tx = W / 2 - (f[0] - f[1]) * TW * zoom;
+    view.ty = H / 2 - ((f[0] + f[1]) * TH * zoom - f[2] * zoom) + 10;
+    view.glide = true;
+    document.querySelectorAll('[data-focus]').forEach((b) => b.classList.toggle('on', b.dataset.focus === key));
+  }
+  function pick(sx, sy) {
+    let best = null, bd = 36;
+    actors.forEach((s) => {
+      if (s.dead) return;
+      const p = iso(s.gx, s.gy, s.z);
+      const d = Math.hypot(p.x - sx, p.y - 18 * view.zoom - sy);
+      if (d < bd) { bd = d; best = s; }
+    });
+    return best;
+  }
+  function highlight(src) {
+    return src.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/(^|\n)(#.*)/g, '$1<span class="cm">$2</span>')
+      .replace(/\b(def|return|if|for|in)\b/g, '<span class="kw">$1</span>')
+      .replace(/(&quot;|")([^"]*)("|&quot;)/g, '<span class="st">"$2"</span>');
+  }
+  function renderDrawer() {
+    const s = selected;
+    const drawer = document.getElementById('drawer');
+    if (!s) { drawer.classList.remove('open'); return; }
+    drawer.classList.add('open');
+    document.getElementById('d-name').textContent = s.name;
+    document.getElementById('d-role').textContent = s.role + ' · ' + s.group + ' · ' + s.handle;
+    document.getElementById('d-state').textContent = s.state + ' · ' + roomAt(s.gx, s.gy, s.z).short;
+    const av = document.getElementById('avatar');
+    const ax = av.getContext('2d');
+    ax.clearRect(0, 0, 144, 144);
+    ax.fillStyle = '#f8fafc'; ax.fillRect(0, 0, 144, 144);
+    ax.fillStyle = s.uniform; ax.fillRect(48, 78, 48, 40);
+    ax.fillStyle = s.skin; ax.beginPath(); ax.arc(72, 62, 22, 0, 7); ax.fill();
+    ax.fillStyle = s.hair; ax.beginPath(); ax.arc(72, 52, 24, Math.PI, 0); ax.fill();
+    const tabs = ['Layman', 'Technical', 'Code', 'Run', 'Log'];
+    document.getElementById('tabs').innerHTML = tabs.map((t) => '<button type="button" data-tab="' + t + '"' + (s.tab === t ? ' class="on"' : '') + '>' + t + '</button>').join('');
+    const book = PLAYBOOKS[s.roleKey] || PLAYBOOKS.reception;
+    const panel = document.getElementById('panel');
+    if (s.tab === 'Technical') panel.innerHTML = '<ul>' + s.tech.map((x) => '<li>' + x + '</li>').join('') + '</ul>';
+    else if (s.tab === 'Code') panel.innerHTML = '<pre class="code">' + highlight(book.code) + '</pre>';
+    else if (s.tab === 'Run') panel.innerHTML = '<div class="rowbtns"><button class="primary" type="button" id="runbtn">Run task</button><button type="button" id="pantry">Send to pantry</button><button type="button" id="callc">Call to consultation</button><button type="button" id="hand">Hand off to assistant</button></div><div class="runlog" id="runlog">' + (s.runText || '') + '</div>';
+    else if (s.tab === 'Log') panel.innerHTML = '<div class="runlog">' + (s.logs.join('\n') || 'No actions yet') + '</div>';
+    else panel.innerHTML = '<p>' + s.lay + '</p>';
+    document.querySelectorAll('#tabs button').forEach((b) => b.onclick = () => { s.tab = b.dataset.tab; renderDrawer(); });
+    const run = document.getElementById('runbtn');
+    if (run) run.onclick = () => startRun(s);
+    const pantry = document.getElementById('pantry');
+    if (pantry) pantry.onclick = () => { s.say = 'Coffee at P-110~'; s.sayUntil = simT + 3; goTo(s, 6.2, 15.2, 0, 'BREAK'); s.breakUntil = simT + 10; log(s, 'Sent to pantry'); };
+    const callc = document.getElementById('callc');
+    if (callc) callc.onclick = () => { goTo(s, 27.2, 7.2, 0, 'BREAK'); s.breakUntil = simT + 10; s.say = 'Called to consultation'; s.sayUntil = simT + 3; log(s, 'Called to C-201'); };
+    const hand = document.getElementById('hand');
+    if (hand) hand.onclick = () => { openTerm(); document.getElementById('termin').value = 'run ' + s.handle; };
+  }
+  function startRun(s) {
+    if (s.busy) return;
+    s.busy = true; s.runText = ''; s.tab = 'Run'; renderDrawer();
+    log(s, 'Task started');
+    const done = (last) => {
+      s.busy = false;
+      s.say = last; s.sayUntil = simT + 4;
+      log(s, last);
+      renderDrawer();
+    };
+    const push = (line) => {
+      s.runText += line + '\n';
+      const el = document.getElementById('runlog');
+      if (el && selected === s) el.textContent = s.runText;
+    };
+    if (backend) {
+      fetch('/api/run', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ handle: s.handle }) })
+        .then((res) => {
+          const reader = res.body.getReader();
+          const dec = new TextDecoder();
+          let buf = '';
+          const pump = () => reader.read().then(({ done: end, value }) => {
+            if (end) { done(s.runText.trim().split('\n').pop() || 'Task complete'); return; }
+            buf += dec.decode(value, { stream: true });
+            const parts = buf.split('\n\n'); buf = parts.pop();
+            parts.forEach((p) => push(p.replace(/^data:\s*/, '')));
+            return pump();
+          });
+          return pump();
+        }).catch(() => simulate(s, push, done));
+      return;
+    }
+    simulate(s, push, done);
+  }
+  function simulate(s, push, done) {
+    const steps = (PLAYBOOKS[s.roleKey] || PLAYBOOKS.reception).steps;
+    let i = 0;
+    const tick = () => {
+      if (i >= steps.length) { done((PLAYBOOKS[s.roleKey] || PLAYBOOKS.reception).result); return; }
+      push(steps[i++]);
+      setTimeout(tick, 300 + Math.random() * 500);
+    };
+    tick();
+  }
+  function openTerm() { document.getElementById('term').classList.add('open'); }
+  function printTerm(line) {
+    termLines.push(line);
+    const out = document.getElementById('termout');
+    out.textContent = termLines.join('\n');
+    out.scrollTop = out.scrollHeight;
+  }
+  function command(raw) {
+    const line = raw.trim();
+    if (!line) return;
+    printTerm('> ' + line);
+    if (line === 'help') {
+      printTerm('help\nrun @handle\nfocus <room|full|yeyen|consult|treat|f2>\ncodepink\nspeed <0|1|2|5>\npause\nresume\nshow2f\nsay @handle "message"\nlist');
+      printTerm('rooms: ' + Object.keys(FOCI).join(', '));
+      return;
+    }
+    if (line === 'list') { printTerm(actors.filter((a) => !a.guest).map((a) => a.handle + ' · ' + a.state).join('\n')); return; }
+    if (line === 'pause') { paused = true; printTerm('paused'); syncSpeed(); return; }
+    if (line === 'resume') { paused = false; speed = speed || 1; printTerm('resumed'); syncSpeed(); return; }
+    if (line === 'show2f') { showFull = !showFull; printTerm(showFull ? '2F shown' : '2F cut away'); syncSpeed(); return; }
+    if (line === 'codepink') { triggerPink(); printTerm('Code Pink'); return; }
+    let m = line.match(/^speed\s+(\d+(?:\.\d+)?)/);
+    if (m) {
+      const n = Number(m[1]);
+      if (n === 0) { paused = true; speed = 0; } else { paused = false; speed = n; }
+      printTerm('speed ' + n); syncSpeed(); return;
+    }
+    m = line.match(/^focus\s+(\S+)/i);
+    if (m) {
+      const key = m[1];
+      if (!FOCI[key] && key !== 'T-300') { printTerm('unknown focus'); return; }
+      focusKey(FOCI[key] ? key : 'treat'); printTerm('focused ' + key); return;
+    }
+    m = line.match(/^run\s+(@?\w+)/);
+    if (m) {
+      const handle = m[1].startsWith('@') ? m[1] : '@' + m[1];
+      const s = actors.find((a) => a.handle === handle);
+      if (!s) { printTerm('unknown sim'); return; }
+      selected = s; s.tab = 'Run'; renderDrawer(); startRun(s); printTerm('running ' + handle); return;
+    }
+    m = line.match(/^say\s+(@?\w+)\s+"([^"]*)"/);
+    if (m) {
+      const handle = m[1].startsWith('@') ? m[1] : '@' + m[1];
+      const s = actors.find((a) => a.handle === handle);
+      if (!s) { printTerm('unknown sim'); return; }
+      s.say = m[2]; s.sayUntil = simT + 4; log(s, 'Say: ' + m[2]); printTerm('said'); return;
+    }
+    printTerm('unknown command — try help');
+  }
+  function triggerPink() {
+    pinkUntil = simT + 12;
+    actors.forEach((s) => {
+      if (s.guest || s.dead) return;
+      s.rush = true; s.busy = false;
+      s.say = 'Code Pink — to consultations'; s.sayUntil = simT + 3.5;
+      log(s, 'Code Pink');
+      goTo(s, 26 + (s.phase % 3), 6.5 + (s.phase % 2), 0, 'PINK');
+    });
+  }
+  function syncSpeed() {
+    document.querySelectorAll('[data-speed]').forEach((b) => {
+      const v = b.dataset.speed;
+      const on = v === 'pause' ? paused : !paused && String(speed) === v;
+      b.classList.toggle('on', on);
+    });
+    const cut = document.getElementById('cut2');
+    if (cut) { cut.textContent = showFull ? 'Cut away 2F' : 'Show 2F'; cut.classList.toggle('on', showFull); }
+    const pink = document.getElementById('pink');
+    if (pink) pink.classList.toggle('on', simT < pinkUntil);
+  }
+  function buildTools() {
+    const tools = document.getElementById('tools');
+    const buttons = [
+      ['full','Full Clinic'], ['yeyen','dr. Yeyen'], ['f2','2F Boardroom & Ops'], ['R-101','1F Reception'],
+      ['consult','1F Consultations'], ['P-110','1F Pantry'], ['treat','1F Treatment Suites'],
+      ['S-120','1F Sterilisation'], ['L-105','1F Patient Lounge'], ['D-108','1F Lockers']
+    ];
+    tools.innerHTML = buttons.map(([k, label]) => '<button type="button" data-focus="' + k + '">' + label + '</button>').join('')
+      + '<button type="button" id="cut2">Cut away 2F</button>'
+      + '<button type="button" data-speed="pause">Pause</button><button type="button" data-speed="1">1x</button><button type="button" data-speed="2">2x</button><button type="button" data-speed="5">5x</button>'
+      + '<button type="button" class="danger" id="pink">Trigger Code Pink</button>'
+      + '<button type="button" id="termbtn">Terminal</button>'
+      + '<span class="status" id="status">Static preview — backend offline</span>';
+    tools.querySelectorAll('[data-focus]').forEach((b) => b.onclick = () => focusKey(b.dataset.focus));
+    document.getElementById('cut2').onclick = () => { showFull = !showFull; syncSpeed(); };
+    tools.querySelectorAll('[data-speed]').forEach((b) => b.onclick = () => {
+      if (b.dataset.speed === 'pause') { paused = !paused; if (!paused && !speed) speed = 1; }
+      else { paused = false; speed = Number(b.dataset.speed); }
+      syncSpeed();
+    });
+    document.getElementById('pink').onclick = triggerPink;
+    document.getElementById('termbtn').onclick = () => document.getElementById('term').classList.toggle('open');
+    syncSpeed();
+  }
+  function bootLogo() {
+    const c = document.getElementById('logo');
+    const g = c.getContext('2d');
+    g.clearRect(0, 0, 72, 72);
+    g.fillStyle = COL.sage; g.beginPath(); g.arc(36, 36, 30, 0, 7); g.fill();
+    g.save(); g.translate(36, 36); g.scale(1.7, 1.7); logoMark(0, 0, 10); g.restore();
+  }
+
+  furnish();
+  STAFF.forEach((s) => { const a = makeActor(s); a.tab = 'Layman'; actors.push(a); });
+  buildTools();
+  bootLogo();
+  resize();
+  focusKey('full');
+  printTerm('SKINDERMA lobby ready. Type help.');
+
+  canvas.addEventListener('pointerdown', (e) => {
+    drag = { x: e.clientX, y: e.clientY, ox: view.x, oy: view.y, moved: false, id: e.pointerId };
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    hover = pick(e.clientX - rect.left, e.clientY - rect.top);
+    canvas.style.cursor = hover ? 'pointer' : 'grab';
+    if (!drag) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (Math.hypot(dx, dy) > 4) drag.moved = true;
+    view.glide = false;
+    view.x = drag.ox + dx; view.y = drag.oy + dy;
+    view.tx = view.x; view.ty = view.y;
+  });
+  canvas.addEventListener('pointerup', (e) => {
+    if (drag && !drag.moved) {
+      const rect = canvas.getBoundingClientRect();
+      const hit = pick(e.clientX - rect.left, e.clientY - rect.top);
+      selected = hit;
+      if (hit && !hit.tab) hit.tab = 'Layman';
+      renderDrawer();
+    }
+    drag = null;
+  });
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const next = Math.max(0.6, Math.min(2.2, view.zoom * (e.deltaY < 0 ? 1.08 : 0.92)));
+    view.zoom = next; view.tz = next; view.glide = false;
+  }, { passive: false });
+  window.addEventListener('resize', () => { resize(); if (view.glide) focusKey(document.querySelector('[data-focus].on')?.dataset.focus || 'full'); });
+  document.getElementById('d-close').onclick = () => { selected = null; renderDrawer(); };
+  document.getElementById('termform').onsubmit = (e) => {
+    e.preventDefault();
+    const input = document.getElementById('termin');
+    command(input.value); input.value = '';
+  };
+  fetch('/api/health').then((r) => r.ok ? r.json() : Promise.reject()).then((j) => {
+    if (j && j.ok) {
+      backend = true;
+      const el = document.getElementById('status');
+      el.textContent = 'Live backend · ready';
+      el.classList.add('live');
+    }
+  }).catch(() => {});
+
+  let last = performance.now();
+  let guestAt = 6;
+  let tickAt = 0;
+  function loop(now) {
+    const dt = Math.min(0.05, (now - last) / 1000) * (paused ? 0 : speed);
+    last = now;
+    simT += dt;
+    if (view.glide) {
+      view.x += (view.tx - view.x) * 0.08;
+      view.y += (view.ty - view.y) * 0.08;
+      view.zoom += (view.tz - view.zoom) * 0.08;
+    }
+    actors.forEach((a) => updateActor(a, dt));
+    for (let i = actors.length - 1; i >= 0; i--) if (actors[i].dead) actors.splice(i, 1);
+    if (simT > guestAt) { spawnGuest(); guestAt = simT + 40; }
+    if (simT > pinkUntil) {
+      const pink = document.getElementById('pink');
+      if (pink && pink.classList.contains('on')) pink.classList.remove('on');
+    }
+    if (now > tickAt) {
+      tickAt = now + 1000;
+      const d = new Date();
+      document.getElementById('clockline').textContent = 'SKINDERMA · 2 floors · ' + d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+      const text = actors.filter((a) => !a.guest && !a.dead).map((a) => a.handle + ' · ' + roomAt(a.gx, a.gy, a.z).short).join('    ');
+      document.getElementById('tick').textContent = text + '    ' + text;
+      if (selected) document.getElementById('d-state').textContent = selected.state + ' · ' + roomAt(selected.gx, selected.gy, selected.z).short;
+    }
+    frame();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
